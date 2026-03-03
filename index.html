@@ -14,7 +14,6 @@
             padding: 20px;
         }
         
-        /* Game Container to hold canvas and UI overlays */
         #gameContainer {
             position: relative;
             width: 800px;
@@ -22,16 +21,12 @@
             margin: 0 auto;
             border: 3px solid #555;
             box-shadow: 0 0 20px rgba(157, 23, 77, 0.5);
-            /* Gradient matching the alien/pixel landscape vibe */
             background: linear-gradient(to bottom, #0f172a 0%, #1e1b4b 40%, #581c87 80%, #9d174d 100%);
             overflow: hidden;
         }
 
-        canvas {
-            display: block;
-        }
+        canvas { display: block; }
 
-        /* UI Overlays */
         .screen {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -40,7 +35,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            display: none; /* Hidden by default */
+            display: none; 
         }
 
         h1 { font-size: 48px; margin-bottom: 10px; color: #ff00ff; text-shadow: 2px 2px 0 #00ffff; }
@@ -61,15 +56,17 @@
         }
         .menu-btn:hover { background-color: #00ffff; color: #000; }
 
-        /* Customization specific styles */
-        .color-row { margin: 15px 0; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .color-btn { width: 30px; height: 30px; border: 2px solid white; cursor: pointer; }
+        .color-row { margin: 15px 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 15px; max-width: 300px; }
+        .color-btn { width: 40px; height: 40px; border: 2px solid white; cursor: pointer; transition: transform 0.1s; }
+        .color-btn:hover { transform: scale(1.1); }
         
-        /* Settings specific styles */
-        .settings-panel { background: rgba(0,0,0,0.8); padding: 20px; border: 1px solid #555; text-align: left; }
-        .settings-panel p { margin: 5px 0; font-size: 16px; color: #ccc; }
+        .settings-panel { background: rgba(0,0,0,0.8); padding: 20px; border: 1px solid #555; text-align: left; width: 350px; }
+        .settings-panel p { margin: 8px 0; font-size: 16px; color: #ccc; }
         
-        #previewBox { width: 60px; height: 60px; border: 2px solid #fff; margin-bottom: 20px; position: relative;}
+        #previewBox { width: 40px; height: 40px; border: 2px solid #fff; margin-bottom: 20px; }
+
+        /* Slider Styling */
+        input[type=range] { width: 100%; margin: 10px 0; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -88,20 +85,16 @@
             <h2>Customize Character</h2>
             <div id="previewBox" style="background-color: blue;"></div>
             
+            <span>Select Body Color:</span>
             <div class="color-row">
-                <span>Body Color:</span>
                 <div class="color-btn" style="background: blue;" onclick="setBodyColor('blue')"></div>
                 <div class="color-btn" style="background: #00ff00;" onclick="setBodyColor('#00ff00')"></div>
                 <div class="color-btn" style="background: #ff00ff;" onclick="setBodyColor('#ff00ff')"></div>
                 <div class="color-btn" style="background: white;" onclick="setBodyColor('white')"></div>
-            </div>
-
-            <div class="color-row">
-                <span>Eye Color:</span>
-                <div class="color-btn" style="background: black;" onclick="setEyeColor('black')"></div>
-                <div class="color-btn" style="background: white;" onclick="setEyeColor('white')"></div>
-                <div class="color-btn" style="background: #ff0000;" onclick="setEyeColor('#ff0000')"></div>
-                <div class="color-btn" style="background: #00ffff;" onclick="setEyeColor('#00ffff')"></div>
+                <div class="color-btn" style="background: #ff8800;" onclick="setBodyColor('#ff8800')"></div>
+                <div class="color-btn" style="background: #ffff00;" onclick="setBodyColor('#ffff00')"></div>
+                <div class="color-btn" style="background: #00ffff;" onclick="setBodyColor('#00ffff')"></div>
+                <div class="color-btn" style="background: #8800ff;" onclick="setBodyColor('#8800ff')"></div>
             </div>
 
             <button class="menu-btn" onclick="showScreen('mainMenu')" style="margin-top: 30px;">Back to Menu</button>
@@ -110,7 +103,13 @@
         <div id="settingsMenu" class="screen">
             <h2>Options & Settings</h2>
             <div class="settings-panel">
-                <h3>Controls / Keybinds</h3>
+                <h3 style="color: #ff00ff; margin-top: 0;">Difficulty</h3>
+                <p>Enemy Level: <strong id="diffLabel" style="color: white;">Normal</strong></p>
+                <input type="range" id="diffSlider" min="1" max="5" value="3" onchange="changeDifficulty()" oninput="changeDifficulty()">
+                
+                <hr style="border-color: #444; margin: 15px 0;">
+                
+                <h3 style="color: #00ffff;">Controls</h3>
                 <p><strong>Move:</strong> WASD / Arrows</p>
                 <p><strong>Jump:</strong> W / Up Arrow</p>
                 <p><strong>Shoot:</strong> Z or J</p>
@@ -118,9 +117,6 @@
                 <p><strong>Dash:</strong> C or L</p>
                 <p><strong>Pause:</strong> P</p>
                 <p><strong>Restart Match:</strong> R</p>
-                <hr style="border-color: #444; margin: 15px 0;">
-                <p><em>Volume: 100% (Sound coming soon!)</em></p>
-                <p><em>Custom Key Remapping: Coming soon!</em></p>
             </div>
             <button class="menu-btn" onclick="returnFromSettings()">Back</button>
         </div>
@@ -137,9 +133,15 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// --- GAME STATE MANAGEMENT ---
-let gameState = 'MENU'; // States: MENU, PLAYING, PAUSED
-let previousState = 'MENU'; // Used for the settings menu back button
+// --- GAME STATE & SETTINGS ---
+let gameState = 'MENU'; 
+let previousState = 'MENU'; 
+let customBodyColor = 'blue';
+
+// Difficulty Variables
+let difficultyLevel = 3; 
+let aiSpeedMult = 1.0;
+let aiCooldownMult = 1.0;
 
 function showScreen(screenId) {
     document.getElementById('mainMenu').style.display = 'none';
@@ -147,14 +149,12 @@ function showScreen(screenId) {
     document.getElementById('settingsMenu').style.display = 'none';
     document.getElementById('pauseMenu').style.display = 'none';
     
-    if (screenId) {
-        document.getElementById(screenId).style.display = 'flex';
-    }
+    if (screenId) document.getElementById(screenId).style.display = 'flex';
 }
 
 function startGame() {
     gameState = 'PLAYING';
-    showScreen(null); // Hide all menus
+    showScreen(null); 
     resetGame();
 }
 
@@ -178,19 +178,20 @@ function returnFromSettings() {
     else showScreen('mainMenu');
 }
 
-// --- CUSTOMIZATION ---
-let customBodyColor = 'blue';
-let customEyeColor = 'black';
-
 function setBodyColor(color) {
     customBodyColor = color;
     document.getElementById('previewBox').style.backgroundColor = color;
 }
-function setEyeColor(color) {
-    customEyeColor = color;
-    // We will draw the eyes in the canvas, but keep track of the variable here
-}
 
+function changeDifficulty() {
+    difficultyLevel = parseInt(document.getElementById('diffSlider').value);
+    const labels = ["Very Easy", "Easy", "Normal", "Hard", "Insane"];
+    document.getElementById('diffLabel').innerText = labels[difficultyLevel - 1];
+    
+    // Scale the AI based on the 1-5 slider
+    aiSpeedMult = 0.7 + (difficultyLevel * 0.1);    // Ranges from 0.8x to 1.2x speed
+    aiCooldownMult = 1.4 - (difficultyLevel * 0.2); // Ranges from 1.2x to 0.4x cooldown time
+}
 
 // --- PHYSICS & INPUT ---
 const MOVE_SPEED = 180; 
@@ -205,7 +206,6 @@ let keys = {};
 let prevKeys = {}; 
 window.addEventListener('keydown', e => {
     keys[e.key.toLowerCase()] = true;
-    // Handle single-press pause toggle
     if (e.key.toLowerCase() === 'p' && !prevKeys['p']) togglePause();
 });
 window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
@@ -213,11 +213,10 @@ window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 let player, enemy, bullets, platforms, lastTime;
 
 function resetGame() {
-    player = { x: 50, y: 500, w: 20, h: 20, vx: 0, vy: 0, hp: 5, facing: 'right', shielding: false, cooldown: 0, dashTime: 0, dashCd: 0, color: customBodyColor, eyeColor: customEyeColor, jumps: 0, onWall: 0 };
-    enemy = { x: 730, y: 500, w: 20, h: 20, vx: 0, vy: 0, hp: 5, facing: 'left', shielding: false, cooldown: 0, color: 'red', eyeColor: 'black', stateTimer: 0, jumps: 0, onWall: 0 };
+    player = { x: 50, y: 500, w: 10, h: 10, vx: 0, vy: 0, hp: 5, facing: 'right', shielding: false, cooldown: 0, dashTime: 0, dashCd: 0, color: customBodyColor, jumps: 0, onWall: 0 };
+    enemy = { x: 740, y: 500, w: 10, h: 10, vx: 0, vy: 0, hp: 5, facing: 'left', shielding: false, cooldown: 0, color: 'red', stateTimer: 0, jumps: 0, onWall: 0 };
     bullets = [];
     
-    // Adjusted platforms for slightly larger player sizes (20x20 instead of 10x10) so you can see the eyes better!
     platforms = [
         { x: 0, y: 570, w: 800, h: 30 }, 
         { x: 100, y: 460, w: 100, h: 10 },
@@ -246,7 +245,7 @@ function updatePhysics(entity, dt) {
     if (entity.x + entity.w >= canvas.width) { entity.x = canvas.width - entity.w; entity.onWall = 1; }
 
     platforms.forEach(p => {
-        if (rectIntersect(entity, p) && entity.vy > 0 && entity.y + entity.h - (entity.vy * dt) <= p.y + 15) {
+        if (rectIntersect(entity, p) && entity.vy > 0 && entity.y + entity.h - (entity.vy * dt) <= p.y + 10) {
             entity.y = p.y - entity.h;
             entity.vy = 0;
             entity.grounded = true;
@@ -260,21 +259,23 @@ function updatePhysics(entity, dt) {
 function shoot(entity) {
     if (entity.cooldown <= 0) {
         bullets.push({
-            x: entity.facing === 'right' ? entity.x + entity.w + 2 : entity.x - 12,
-            y: entity.y + 8,
-            w: 10, h: 4, 
+            x: entity.facing === 'right' ? entity.x + 12 : entity.x - 12,
+            y: entity.y + 3,
+            w: 10, h: 3, 
             vx: entity.facing === 'right' ? BULLET_SPEED : -BULLET_SPEED,
             owner: entity.color
         });
-        entity.cooldown = 0.4; 
+        // Apply AI specific cooldown multiplier
+        let aiMult = (entity === enemy) ? aiCooldownMult : 1;
+        entity.cooldown = 0.4 * aiMult; 
     }
 }
 
 function getShieldRect(entity) {
-    if (entity.facing === 'right') return { x: entity.x + 25, y: entity.y - 4, w: 4, h: 28 };
-    if (entity.facing === 'left') return { x: entity.x - 9, y: entity.y - 4, w: 4, h: 28 };
-    if (entity.facing === 'up') return { x: entity.x - 4, y: entity.y - 9, w: 28, h: 4 };
-    if (entity.facing === 'down') return { x: entity.x - 4, y: entity.y + 25, w: 28, h: 4 };
+    if (entity.facing === 'right') return { x: entity.x + 15, y: entity.y - 3, w: 3, h: 16 };
+    if (entity.facing === 'left') return { x: entity.x - 8, y: entity.y - 3, w: 3, h: 16 };
+    if (entity.facing === 'up') return { x: entity.x - 3, y: entity.y - 8, w: 16, h: 3 };
+    if (entity.facing === 'down') return { x: entity.x - 3, y: entity.y + 15, w: 16, h: 3 };
 }
 
 function updateAI(dt) {
@@ -302,8 +303,9 @@ function updateAI(dt) {
             else if (enemy.grounded) { enemy.vy = JUMP_VELOCITY; enemy.jumps = 1; }
         }
         
-        if (enemy.facing === 'left') enemy.vx = -MOVE_SPEED;
-        if (enemy.facing === 'right') enemy.vx = MOVE_SPEED;
+        // Apply difficulty multiplier to AI movement speed
+        if (enemy.facing === 'left') enemy.vx = -MOVE_SPEED * aiSpeedMult;
+        if (enemy.facing === 'right') enemy.vx = MOVE_SPEED * aiSpeedMult;
 
         if ((enemy.facing === 'left' && player.x < enemy.x) || (enemy.facing === 'right' && player.x > enemy.x)) {
             shoot(enemy);
@@ -314,13 +316,12 @@ function updateAI(dt) {
 function update(dt) {
     if (gameState !== 'PLAYING') {
         Object.assign(prevKeys, keys);
-        return; // Stop processing game logic if paused or in menu
+        return; 
     }
 
     if (keys['r']) resetGame();
     if (player.hp <= 0 || enemy.hp <= 0) return;
 
-    // Alt Keybinds applied here!
     let dashKey = keys['c'] || keys['l'];
     let shootKey = keys['z'] || keys['j'];
     let shieldKey = keys['x'] || keys['k'];
@@ -391,26 +392,7 @@ function drawRect(rect, color) {
 }
 
 function drawPlayer(entity) {
-    // Body
     drawRect(entity, entity.dashTime > 0 ? 'white' : entity.color);
-    
-    // Henry Stickmin vertical line eyes
-    ctx.strokeStyle = entity.eyeColor;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    
-    // Adjust eye position based on facing direction
-    let eyeOffsetX = entity.facing === 'left' ? 4 : 12;
-    if (entity.facing === 'up') eyeOffsetX = 8;
-    
-    ctx.moveTo(entity.x + eyeOffsetX, entity.y + 4);
-    ctx.lineTo(entity.x + eyeOffsetX, entity.y + 12);
-    
-    ctx.moveTo(entity.x + eyeOffsetX + 4, entity.y + 4);
-    ctx.lineTo(entity.x + eyeOffsetX + 4, entity.y + 12);
-    
-    ctx.stroke();
-
     if (entity.shielding) drawRect(getShieldRect(entity), entity === player ? '#00ffff' : '#ff8888');
 }
 
@@ -423,10 +405,9 @@ function drawHearts(x, y, hp, color) {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Only draw game elements if we are playing or paused
     if (gameState === 'MENU' || gameState === 'CUSTOMIZE' || gameState === 'SETTINGS') return;
 
-    platforms.forEach(p => drawRect(p, 'rgba(68, 68, 68, 0.8)')); // Slightly transparent platforms
+    platforms.forEach(p => drawRect(p, 'rgba(68, 68, 68, 0.8)'));
 
     if (player.hp > 0) drawPlayer(player);
     if (enemy.hp > 0) drawPlayer(enemy);
@@ -458,7 +439,6 @@ function loop(timestamp) {
     requestAnimationFrame(loop);
 }
 
-// Initial setup
 resetGame();
 requestAnimationFrame(loop);
 </script>
