@@ -3,24 +3,196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blue vs Red: Dash & Islands Update</title>
+    <title>Blue vs Red: The Arena</title>
     <style>
-        body { background-color: #222; color: white; text-align: center; font-family: sans-serif; }
-        canvas { background-color: #111; border: 2px solid #555; margin-top: 20px; box-shadow: 0 0 10px #000; }
-        p { max-width: 800px; margin: 10px auto; line-height: 1.5; color: #aaa; }
+        body { 
+            background-color: #0a0a1a; 
+            color: white; 
+            text-align: center; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0;
+            padding: 20px;
+        }
+        
+        /* Game Container to hold canvas and UI overlays */
+        #gameContainer {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            margin: 0 auto;
+            border: 3px solid #555;
+            box-shadow: 0 0 20px rgba(157, 23, 77, 0.5);
+            /* Gradient matching the alien/pixel landscape vibe */
+            background: linear-gradient(to bottom, #0f172a 0%, #1e1b4b 40%, #581c87 80%, #9d174d 100%);
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        /* UI Overlays */
+        .screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            display: none; /* Hidden by default */
+        }
+
+        h1 { font-size: 48px; margin-bottom: 10px; color: #ff00ff; text-shadow: 2px 2px 0 #00ffff; }
+        h2 { color: #fff; margin-bottom: 20px; }
+
+        .menu-btn {
+            background-color: #222;
+            color: white;
+            border: 2px solid #00ffff;
+            padding: 15px 40px;
+            margin: 10px;
+            font-size: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+            text-transform: uppercase;
+            width: 250px;
+        }
+        .menu-btn:hover { background-color: #00ffff; color: #000; }
+
+        /* Customization specific styles */
+        .color-row { margin: 15px 0; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .color-btn { width: 30px; height: 30px; border: 2px solid white; cursor: pointer; }
+        
+        /* Settings specific styles */
+        .settings-panel { background: rgba(0,0,0,0.8); padding: 20px; border: 1px solid #555; text-align: left; }
+        .settings-panel p { margin: 5px 0; font-size: 16px; color: #ccc; }
+        
+        #previewBox { width: 60px; height: 60px; border: 2px solid #fff; margin-bottom: 20px; position: relative;}
     </style>
 </head>
 <body>
 
-    <h2>Blue vs Red Box (Dash & Islands)</h2>
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
-    <p><strong>Controls:</strong> WASD/Arrows to move. W/Up to jump (double & wall jump). <strong>C</strong> to dash. <strong>Z</strong> to shoot. <strong>X</strong> to shield. <strong>R</strong> to reset.</p>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+        <div id="mainMenu" class="screen" style="display: flex;">
+            <h1>THE ARENA</h1>
+            <button class="menu-btn" onclick="startGame()">Play</button>
+            <button class="menu-btn" onclick="showScreen('customizeMenu')">Customize</button>
+            <button class="menu-btn" onclick="showScreen('settingsMenu')">Options / Settings</button>
+        </div>
+
+        <div id="customizeMenu" class="screen">
+            <h2>Customize Character</h2>
+            <div id="previewBox" style="background-color: blue;"></div>
+            
+            <div class="color-row">
+                <span>Body Color:</span>
+                <div class="color-btn" style="background: blue;" onclick="setBodyColor('blue')"></div>
+                <div class="color-btn" style="background: #00ff00;" onclick="setBodyColor('#00ff00')"></div>
+                <div class="color-btn" style="background: #ff00ff;" onclick="setBodyColor('#ff00ff')"></div>
+                <div class="color-btn" style="background: white;" onclick="setBodyColor('white')"></div>
+            </div>
+
+            <div class="color-row">
+                <span>Eye Color:</span>
+                <div class="color-btn" style="background: black;" onclick="setEyeColor('black')"></div>
+                <div class="color-btn" style="background: white;" onclick="setEyeColor('white')"></div>
+                <div class="color-btn" style="background: #ff0000;" onclick="setEyeColor('#ff0000')"></div>
+                <div class="color-btn" style="background: #00ffff;" onclick="setEyeColor('#00ffff')"></div>
+            </div>
+
+            <button class="menu-btn" onclick="showScreen('mainMenu')" style="margin-top: 30px;">Back to Menu</button>
+        </div>
+
+        <div id="settingsMenu" class="screen">
+            <h2>Options & Settings</h2>
+            <div class="settings-panel">
+                <h3>Controls / Keybinds</h3>
+                <p><strong>Move:</strong> WASD / Arrows</p>
+                <p><strong>Jump:</strong> W / Up Arrow</p>
+                <p><strong>Shoot:</strong> Z or J</p>
+                <p><strong>Shield:</strong> X or K</p>
+                <p><strong>Dash:</strong> C or L</p>
+                <p><strong>Pause:</strong> P</p>
+                <p><strong>Restart Match:</strong> R</p>
+                <hr style="border-color: #444; margin: 15px 0;">
+                <p><em>Volume: 100% (Sound coming soon!)</em></p>
+                <p><em>Custom Key Remapping: Coming soon!</em></p>
+            </div>
+            <button class="menu-btn" onclick="returnFromSettings()">Back</button>
+        </div>
+
+        <div id="pauseMenu" class="screen">
+            <h2>GAME PAUSED</h2>
+            <button class="menu-btn" onclick="togglePause()">Resume</button>
+            <button class="menu-btn" onclick="showScreen('settingsMenu')">Settings</button>
+            <button class="menu-btn" onclick="quitToMenu()">Return to Main Menu</button>
+        </div>
+    </div>
 
 <script>
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// Physics & Ability Variables
+// --- GAME STATE MANAGEMENT ---
+let gameState = 'MENU'; // States: MENU, PLAYING, PAUSED
+let previousState = 'MENU'; // Used for the settings menu back button
+
+function showScreen(screenId) {
+    document.getElementById('mainMenu').style.display = 'none';
+    document.getElementById('customizeMenu').style.display = 'none';
+    document.getElementById('settingsMenu').style.display = 'none';
+    document.getElementById('pauseMenu').style.display = 'none';
+    
+    if (screenId) {
+        document.getElementById(screenId).style.display = 'flex';
+    }
+}
+
+function startGame() {
+    gameState = 'PLAYING';
+    showScreen(null); // Hide all menus
+    resetGame();
+}
+
+function togglePause() {
+    if (gameState === 'PLAYING') {
+        gameState = 'PAUSED';
+        showScreen('pauseMenu');
+    } else if (gameState === 'PAUSED') {
+        gameState = 'PLAYING';
+        showScreen(null);
+    }
+}
+
+function quitToMenu() {
+    gameState = 'MENU';
+    showScreen('mainMenu');
+}
+
+function returnFromSettings() {
+    if (gameState === 'PAUSED') showScreen('pauseMenu');
+    else showScreen('mainMenu');
+}
+
+// --- CUSTOMIZATION ---
+let customBodyColor = 'blue';
+let customEyeColor = 'black';
+
+function setBodyColor(color) {
+    customBodyColor = color;
+    document.getElementById('previewBox').style.backgroundColor = color;
+}
+function setEyeColor(color) {
+    customEyeColor = color;
+    // We will draw the eyes in the canvas, but keep track of the variable here
+}
+
+
+// --- PHYSICS & INPUT ---
 const MOVE_SPEED = 180; 
 const GRAVITY = 900;    
 const JUMP_VELOCITY = -350; 
@@ -31,19 +203,23 @@ const DASH_COOLDOWN = 1.5;
 
 let keys = {};
 let prevKeys = {}; 
-window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+window.addEventListener('keydown', e => {
+    keys[e.key.toLowerCase()] = true;
+    // Handle single-press pause toggle
+    if (e.key.toLowerCase() === 'p' && !prevKeys['p']) togglePause();
+});
 window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
 let player, enemy, bullets, platforms, lastTime;
 
 function resetGame() {
-    player = { x: 50, y: 500, w: 10, h: 10, vx: 0, vy: 0, hp: 5, facing: 'right', shielding: false, cooldown: 0, dashTime: 0, dashCd: 0, color: 'blue', jumps: 0, onWall: 0 };
-    enemy = { x: 740, y: 500, w: 10, h: 10, vx: 0, vy: 0, hp: 5, facing: 'left', shielding: false, cooldown: 0, color: 'red', stateTimer: 0, jumps: 0, onWall: 0 };
+    player = { x: 50, y: 500, w: 20, h: 20, vx: 0, vy: 0, hp: 5, facing: 'right', shielding: false, cooldown: 0, dashTime: 0, dashCd: 0, color: customBodyColor, eyeColor: customEyeColor, jumps: 0, onWall: 0 };
+    enemy = { x: 730, y: 500, w: 20, h: 20, vx: 0, vy: 0, hp: 5, facing: 'left', shielding: false, cooldown: 0, color: 'red', eyeColor: 'black', stateTimer: 0, jumps: 0, onWall: 0 };
     bullets = [];
     
-    // Expanded Island Layout
+    // Adjusted platforms for slightly larger player sizes (20x20 instead of 10x10) so you can see the eyes better!
     platforms = [
-        { x: 0, y: 570, w: 800, h: 30 }, // Floor
+        { x: 0, y: 570, w: 800, h: 30 }, 
         { x: 100, y: 460, w: 100, h: 10 },
         { x: 350, y: 480, w: 100, h: 10 },
         { x: 600, y: 460, w: 100, h: 10 },
@@ -61,23 +237,16 @@ function rectIntersect(r1, r2) {
 
 function updatePhysics(entity, dt) {
     entity.x += entity.vx * dt;
-    
-    // Normal gravity if not dashing
-    if (entity.dashTime === undefined || entity.dashTime <= 0) {
-        entity.vy += GRAVITY * dt;
-    }
+    if (entity.dashTime === undefined || entity.dashTime <= 0) entity.vy += GRAVITY * dt;
     entity.y += entity.vy * dt;
-
     entity.grounded = false;
-    entity.onWall = 0; // 0 = no, -1 = left wall, 1 = right wall
+    entity.onWall = 0; 
 
-    // Screen bounds & Wall Jump detection
     if (entity.x <= 0) { entity.x = 0; entity.onWall = -1; }
     if (entity.x + entity.w >= canvas.width) { entity.x = canvas.width - entity.w; entity.onWall = 1; }
 
-    // Platform Collisions (Floor only to allow jumping up through them)
     platforms.forEach(p => {
-        if (rectIntersect(entity, p) && entity.vy > 0 && entity.y + entity.h - (entity.vy * dt) <= p.y + 10) {
+        if (rectIntersect(entity, p) && entity.vy > 0 && entity.y + entity.h - (entity.vy * dt) <= p.y + 15) {
             entity.y = p.y - entity.h;
             entity.vy = 0;
             entity.grounded = true;
@@ -91,9 +260,9 @@ function updatePhysics(entity, dt) {
 function shoot(entity) {
     if (entity.cooldown <= 0) {
         bullets.push({
-            x: entity.facing === 'right' ? entity.x + 12 : entity.x - 12,
-            y: entity.y + 3,
-            w: 10, h: 3, 
+            x: entity.facing === 'right' ? entity.x + entity.w + 2 : entity.x - 12,
+            y: entity.y + 8,
+            w: 10, h: 4, 
             vx: entity.facing === 'right' ? BULLET_SPEED : -BULLET_SPEED,
             owner: entity.color
         });
@@ -102,10 +271,10 @@ function shoot(entity) {
 }
 
 function getShieldRect(entity) {
-    if (entity.facing === 'right') return { x: entity.x + 15, y: entity.y - 3, w: 3, h: 16 };
-    if (entity.facing === 'left') return { x: entity.x - 8, y: entity.y - 3, w: 3, h: 16 };
-    if (entity.facing === 'up') return { x: entity.x - 3, y: entity.y - 8, w: 16, h: 3 };
-    if (entity.facing === 'down') return { x: entity.x - 3, y: entity.y + 15, w: 16, h: 3 };
+    if (entity.facing === 'right') return { x: entity.x + 25, y: entity.y - 4, w: 4, h: 28 };
+    if (entity.facing === 'left') return { x: entity.x - 9, y: entity.y - 4, w: 4, h: 28 };
+    if (entity.facing === 'up') return { x: entity.x - 4, y: entity.y - 9, w: 28, h: 4 };
+    if (entity.facing === 'down') return { x: entity.x - 4, y: entity.y + 25, w: 28, h: 4 };
 }
 
 function updateAI(dt) {
@@ -113,21 +282,17 @@ function updateAI(dt) {
     enemy.vx = 0;
     enemy.shielding = false;
 
-    // AI Wall Jump Logic
     if (enemy.onWall !== 0 && !enemy.grounded && enemy.vy > 0 && Math.random() < 0.05) {
         enemy.vy = JUMP_VELOCITY * 0.9;
         enemy.facing = enemy.onWall === -1 ? 'right' : 'left';
     }
 
-    let incoming = bullets.find(b => b.owner === 'blue' && Math.abs(b.y - enemy.y) < 20 && Math.abs(b.x - enemy.x) < 150);
+    let incoming = bullets.find(b => b.owner === player.color && Math.abs(b.y - enemy.y) < 20 && Math.abs(b.x - enemy.x) < 150);
     
     if (incoming) {
         if (incoming.x < enemy.x) enemy.facing = 'left';
-        if (Math.random() < 0.4 && enemy.grounded) {
-            enemy.vy = JUMP_VELOCITY;
-        } else {
-            enemy.shielding = true;
-        }
+        if (Math.random() < 0.4 && enemy.grounded) enemy.vy = JUMP_VELOCITY;
+        else enemy.shielding = true;
     } else {
         if (enemy.stateTimer <= 0) {
             enemy.stateTimer = Math.random();
@@ -147,50 +312,52 @@ function updateAI(dt) {
 }
 
 function update(dt) {
+    if (gameState !== 'PLAYING') {
+        Object.assign(prevKeys, keys);
+        return; // Stop processing game logic if paused or in menu
+    }
+
     if (keys['r']) resetGame();
     if (player.hp <= 0 || enemy.hp <= 0) return;
 
-    // Dash Logic
-    if (keys['c'] && player.dashCd <= 0) {
+    // Alt Keybinds applied here!
+    let dashKey = keys['c'] || keys['l'];
+    let shootKey = keys['z'] || keys['j'];
+    let shieldKey = keys['x'] || keys['k'];
+    let jumpKey = keys['w'] || keys['arrowup'];
+
+    if (dashKey && player.dashCd <= 0) {
         player.dashTime = DASH_DURATION;
         player.dashCd = DASH_COOLDOWN;
     }
 
     player.vx = 0;
-    player.shielding = keys['x'] && !keys['z']; 
+    player.shielding = shieldKey && !shootKey; 
 
     if (player.dashTime > 0) {
-        // While dashing, ignore regular input and speed forward
         player.vx = player.facing === 'left' ? -DASH_SPEED : DASH_SPEED;
-        player.vy = 0; // Suspend gravity during dash
+        player.vy = 0; 
         player.dashTime -= dt;
-        player.shielding = false; // Cannot shield while dashing
+        player.shielding = false; 
     } else {
-        // Regular Movement
         if (keys['a'] || keys['arrowleft']) { player.vx = -MOVE_SPEED; player.facing = 'left'; }
         if (keys['d'] || keys['arrowright']) { player.vx = MOVE_SPEED; player.facing = 'right'; }
-        if (player.shielding && (keys['w'] || keys['arrowup'])) player.facing = 'up';
+        if (player.shielding && jumpKey) player.facing = 'up';
         if (player.shielding && (keys['s'] || keys['arrowdown'])) player.facing = 'down';
 
-        // Jump Logic
-        let jumpKey = keys['w'] || keys['arrowup'];
         let prevJumpKey = prevKeys['w'] || prevKeys['arrowup'];
 
         if (!player.shielding && jumpKey && !prevJumpKey) {
-            if (player.grounded) {
-                player.vy = JUMP_VELOCITY;
-                player.jumps = 1;
-            } else if (player.onWall !== 0) {
+            if (player.grounded) { player.vy = JUMP_VELOCITY; player.jumps = 1; } 
+            else if (player.onWall !== 0) {
                 player.vy = JUMP_VELOCITY * 0.9;
                 player.vx = player.onWall === -1 ? MOVE_SPEED * 1.5 : -MOVE_SPEED * 1.5;
-            } else if (player.jumps < 2) {
-                player.vy = JUMP_VELOCITY * 0.8;
-                player.jumps = 2;
-            }
+            } 
+            else if (player.jumps < 2) { player.vy = JUMP_VELOCITY * 0.8; player.jumps = 2; }
         }
     }
 
-    if (keys['z']) shoot(player);
+    if (shootKey) shoot(player);
 
     player.cooldown -= dt;
     player.dashCd -= dt;
@@ -200,29 +367,51 @@ function update(dt) {
     updateAI(dt);
     updatePhysics(enemy, dt);
 
-    // Bullet logic
     for (let i = bullets.length - 1; i >= 0; i--) {
         let b = bullets[i];
         b.x += b.vx * dt;
 
-        let playerShield = player.shielding ? getShieldRect(player) : null;
-        let enemyShield = enemy.shielding ? getShieldRect(enemy) : null;
+        let pShield = player.shielding ? getShieldRect(player) : null;
+        let eShield = enemy.shielding ? getShieldRect(enemy) : null;
 
-        if (playerShield && rectIntersect(b, playerShield) && b.owner !== 'blue') { bullets.splice(i, 1); continue; }
-        if (enemyShield && rectIntersect(b, enemyShield) && b.owner !== 'red') { bullets.splice(i, 1); continue; }
-
-        if (b.owner !== 'blue' && rectIntersect(b, player)) { player.hp--; bullets.splice(i, 1); continue; }
-        if (b.owner !== 'red' && rectIntersect(b, enemy)) { enemy.hp--; bullets.splice(i, 1); continue; }
-
+        if (pShield && rectIntersect(b, pShield) && b.owner !== player.color) { bullets.splice(i, 1); continue; }
+        if (eShield && rectIntersect(b, eShield) && b.owner !== enemy.color) { bullets.splice(i, 1); continue; }
+        if (b.owner !== player.color && rectIntersect(b, player)) { player.hp--; bullets.splice(i, 1); continue; }
+        if (b.owner !== enemy.color && rectIntersect(b, enemy)) { enemy.hp--; bullets.splice(i, 1); continue; }
         if (b.x < 0 || b.x > canvas.width) bullets.splice(i, 1);
     }
 
     Object.assign(prevKeys, keys);
 }
 
+// --- DRAWING ---
 function drawRect(rect, color) {
     ctx.fillStyle = color;
     ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+}
+
+function drawPlayer(entity) {
+    // Body
+    drawRect(entity, entity.dashTime > 0 ? 'white' : entity.color);
+    
+    // Henry Stickmin vertical line eyes
+    ctx.strokeStyle = entity.eyeColor;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    
+    // Adjust eye position based on facing direction
+    let eyeOffsetX = entity.facing === 'left' ? 4 : 12;
+    if (entity.facing === 'up') eyeOffsetX = 8;
+    
+    ctx.moveTo(entity.x + eyeOffsetX, entity.y + 4);
+    ctx.lineTo(entity.x + eyeOffsetX, entity.y + 12);
+    
+    ctx.moveTo(entity.x + eyeOffsetX + 4, entity.y + 4);
+    ctx.lineTo(entity.x + eyeOffsetX + 4, entity.y + 12);
+    
+    ctx.stroke();
+
+    if (entity.shielding) drawRect(getShieldRect(entity), entity === player ? '#00ffff' : '#ff8888');
 }
 
 function drawHearts(x, y, hp, color) {
@@ -234,39 +423,24 @@ function drawHearts(x, y, hp, color) {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw Platforms
-    platforms.forEach(p => drawRect(p, '#444'));
+    // Only draw game elements if we are playing or paused
+    if (gameState === 'MENU' || gameState === 'CUSTOMIZE' || gameState === 'SETTINGS') return;
 
-    // Draw Player
-    if (player.hp > 0) {
-        // Make the player flash white while dashing
-        drawRect(player, player.dashTime > 0 ? 'white' : player.color);
-        if (player.shielding) drawRect(getShieldRect(player), '#00ffff');
-    }
-    
-    // Draw Enemy
-    if (enemy.hp > 0) {
-        drawRect(enemy, enemy.color);
-        if (enemy.shielding) drawRect(getShieldRect(enemy), '#ff8888');
-    }
+    platforms.forEach(p => drawRect(p, 'rgba(68, 68, 68, 0.8)')); // Slightly transparent platforms
 
-    // Draw Bullets
+    if (player.hp > 0) drawPlayer(player);
+    if (enemy.hp > 0) drawPlayer(enemy);
+
     bullets.forEach(b => drawRect(b, '#ffff00'));
 
-    // Draw UI
-    drawHearts(20, 30, player.hp, '#4488ff');
-    drawHearts(canvas.width - 120, 30, enemy.hp, '#ff4444');
+    drawHearts(20, 30, player.hp, customBodyColor);
+    drawHearts(canvas.width - 120, 30, enemy.hp, 'red');
 
-    // Dash Cooldown Indicator
     if (player.dashCd > 0) {
-        ctx.fillStyle = '#888';
-        ctx.font = '12px Arial';
-        ctx.fillText('Dash CD', 20, 50);
+        ctx.fillStyle = '#888'; ctx.font = '12px Arial'; ctx.fillText('Dash CD', 20, 50);
         ctx.fillRect(20, 55, 60 * (1 - (player.dashCd / DASH_COOLDOWN)), 4);
     } else {
-        ctx.fillStyle = 'white';
-        ctx.font = '12px Arial';
-        ctx.fillText('Dash READY', 20, 50);
+        ctx.fillStyle = 'white'; ctx.font = '12px Arial'; ctx.fillText('Dash READY (C/L)', 20, 50);
     }
 
     if (player.hp <= 0) { ctx.fillStyle = 'white'; ctx.font = '24px Arial'; ctx.fillText('RED WINS! Press R to Restart', 230, 300); }
@@ -277,7 +451,6 @@ function loop(timestamp) {
     if (!lastTime) lastTime = timestamp;
     let dt = (timestamp - lastTime) / 1000;
     lastTime = timestamp;
-
     if (dt > 0.1) dt = 0.1;
 
     update(dt);
@@ -285,6 +458,7 @@ function loop(timestamp) {
     requestAnimationFrame(loop);
 }
 
+// Initial setup
 resetGame();
 requestAnimationFrame(loop);
 </script>
