@@ -3,24 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blue vs Red: The Arena</title>
+    <title>Blue vs Red: Ultimates & Arsenal</title>
     <style>
-        body { 
-            background-color: #0a0a1a; 
-            color: white; 
-            text-align: center; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            margin: 0;
-            padding: 20px;
-        }
+        body { background-color: #0a0a1a; color: white; text-align: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; }
         
         #gameContainer {
-            position: relative;
-            width: 800px;
-            height: 600px;
-            margin: 0 auto;
-            border: 3px solid #555;
-            box-shadow: 0 0 20px rgba(157, 23, 77, 0.5);
+            position: relative; width: 800px; height: 600px; margin: 0 auto;
+            border: 3px solid #555; box-shadow: 0 0 20px rgba(157, 23, 77, 0.5);
             background: linear-gradient(to bottom, #0f172a 0%, #1e1b4b 40%, #581c87 80%, #9d174d 100%);
             overflow: hidden;
         }
@@ -28,31 +17,18 @@
         canvas { display: block; }
 
         .screen {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            display: none; 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; display: none; 
         }
 
         h1 { font-size: 48px; margin-bottom: 10px; color: #ff00ff; text-shadow: 2px 2px 0 #00ffff; }
         h2 { color: #fff; margin-bottom: 20px; }
 
         .menu-btn {
-            background-color: #222;
-            color: white;
-            border: 2px solid #00ffff;
-            padding: 15px 40px;
-            margin: 10px;
-            font-size: 20px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.2s;
-            text-transform: uppercase;
-            width: 250px;
+            background-color: #222; color: white; border: 2px solid #00ffff;
+            padding: 15px 40px; margin: 10px; font-size: 20px; cursor: pointer;
+            font-weight: bold; transition: 0.2s; text-transform: uppercase; width: 250px;
         }
         .menu-btn:hover { background-color: #00ffff; color: #000; }
 
@@ -64,8 +40,6 @@
         .settings-panel p { margin: 8px 0; font-size: 16px; color: #ccc; }
         
         #previewBox { width: 40px; height: 40px; border: 2px solid #fff; margin-bottom: 20px; }
-
-        /* Slider Styling */
         input[type=range] { width: 100%; margin: 10px 0; cursor: pointer; }
     </style>
 </head>
@@ -84,7 +58,6 @@
         <div id="customizeMenu" class="screen">
             <h2>Customize Character</h2>
             <div id="previewBox" style="background-color: blue;"></div>
-            
             <span>Select Body Color:</span>
             <div class="color-row">
                 <div class="color-btn" style="background: blue;" onclick="setBodyColor('blue')"></div>
@@ -96,7 +69,6 @@
                 <div class="color-btn" style="background: #00ffff;" onclick="setBodyColor('#00ffff')"></div>
                 <div class="color-btn" style="background: #8800ff;" onclick="setBodyColor('#8800ff')"></div>
             </div>
-
             <button class="menu-btn" onclick="showScreen('mainMenu')" style="margin-top: 30px;">Back to Menu</button>
         </div>
 
@@ -106,17 +78,15 @@
                 <h3 style="color: #ff00ff; margin-top: 0;">Difficulty</h3>
                 <p>Enemy Level: <strong id="diffLabel" style="color: white;">Normal</strong></p>
                 <input type="range" id="diffSlider" min="1" max="5" value="3" onchange="changeDifficulty()" oninput="changeDifficulty()">
-                
                 <hr style="border-color: #444; margin: 15px 0;">
-                
                 <h3 style="color: #00ffff;">Controls</h3>
                 <p><strong>Move:</strong> WASD / Arrows</p>
                 <p><strong>Jump:</strong> W / Up Arrow</p>
                 <p><strong>Shoot:</strong> Z or J</p>
                 <p><strong>Shield:</strong> X or K</p>
                 <p><strong>Dash:</strong> C or L</p>
+                <p><strong>Ultimate:</strong> Q</p>
                 <p><strong>Pause:</strong> P</p>
-                <p><strong>Restart Match:</strong> R</p>
             </div>
             <button class="menu-btn" onclick="returnFromSettings()">Back</button>
         </div>
@@ -133,12 +103,9 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// --- GAME STATE & SETTINGS ---
 let gameState = 'MENU'; 
 let previousState = 'MENU'; 
 let customBodyColor = 'blue';
-
-// Difficulty Variables
 let difficultyLevel = 3; 
 let aiSpeedMult = 1.0;
 let aiCooldownMult = 1.0;
@@ -148,52 +115,26 @@ function showScreen(screenId) {
     document.getElementById('customizeMenu').style.display = 'none';
     document.getElementById('settingsMenu').style.display = 'none';
     document.getElementById('pauseMenu').style.display = 'none';
-    
     if (screenId) document.getElementById(screenId).style.display = 'flex';
 }
 
-function startGame() {
-    gameState = 'PLAYING';
-    showScreen(null); 
-    resetGame();
-}
-
+function startGame() { gameState = 'PLAYING'; showScreen(null); resetGame(); }
 function togglePause() {
-    if (gameState === 'PLAYING') {
-        gameState = 'PAUSED';
-        showScreen('pauseMenu');
-    } else if (gameState === 'PAUSED') {
-        gameState = 'PLAYING';
-        showScreen(null);
-    }
+    if (gameState === 'PLAYING') { gameState = 'PAUSED'; showScreen('pauseMenu'); } 
+    else if (gameState === 'PAUSED') { gameState = 'PLAYING'; showScreen(null); }
 }
-
-function quitToMenu() {
-    gameState = 'MENU';
-    showScreen('mainMenu');
-}
-
-function returnFromSettings() {
-    if (gameState === 'PAUSED') showScreen('pauseMenu');
-    else showScreen('mainMenu');
-}
-
-function setBodyColor(color) {
-    customBodyColor = color;
-    document.getElementById('previewBox').style.backgroundColor = color;
-}
+function quitToMenu() { gameState = 'MENU'; showScreen('mainMenu'); }
+function returnFromSettings() { if (gameState === 'PAUSED') showScreen('pauseMenu'); else showScreen('mainMenu'); }
+function setBodyColor(color) { customBodyColor = color; document.getElementById('previewBox').style.backgroundColor = color; }
 
 function changeDifficulty() {
     difficultyLevel = parseInt(document.getElementById('diffSlider').value);
     const labels = ["Very Easy", "Easy", "Normal", "Hard", "Insane"];
     document.getElementById('diffLabel').innerText = labels[difficultyLevel - 1];
-    
-    // Scale the AI based on the 1-5 slider
-    aiSpeedMult = 0.7 + (difficultyLevel * 0.1);    // Ranges from 0.8x to 1.2x speed
-    aiCooldownMult = 1.4 - (difficultyLevel * 0.2); // Ranges from 1.2x to 0.4x cooldown time
+    aiSpeedMult = 0.7 + (difficultyLevel * 0.1);    
+    aiCooldownMult = 1.4 - (difficultyLevel * 0.2); 
 }
 
-// --- PHYSICS & INPUT ---
 const MOVE_SPEED = 180; 
 const GRAVITY = 900;    
 const JUMP_VELOCITY = -350; 
@@ -211,64 +152,75 @@ window.addEventListener('keydown', e => {
 window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
 let player, enemy, bullets, platforms, lastTime;
+let weaponDrops = [];
+let nextWeaponTimer = 5;
 
 function resetGame() {
-    player = { x: 50, y: 500, w: 10, h: 10, vx: 0, vy: 0, hp: 5, facing: 'right', shielding: false, cooldown: 0, dashTime: 0, dashCd: 0, color: customBodyColor, jumps: 0, onWall: 0 };
-    enemy = { x: 740, y: 500, w: 10, h: 10, vx: 0, vy: 0, hp: 5, facing: 'left', shielding: false, cooldown: 0, color: 'red', stateTimer: 0, jumps: 0, onWall: 0 };
+    player = { x: 50, y: 500, w: 10, h: 10, vx: 0, vy: 0, hp: 5, facing: 'right', shielding: false, cooldown: 0, dashTime: 0, dashCd: 0, color: customBodyColor, jumps: 0, onWall: 0, blocks: 0, weapon: 'default', ammo: 0 };
+    enemy = { x: 740, y: 500, w: 10, h: 10, vx: 0, vy: 0, hp: 5, facing: 'left', shielding: false, cooldown: 0, color: 'red', stateTimer: 0, jumps: 0, onWall: 0, blocks: 0, weapon: 'default', ammo: 0 };
     bullets = [];
+    weaponDrops = [];
+    nextWeaponTimer = 8;
     
     platforms = [
         { x: 0, y: 570, w: 800, h: 30 }, 
-        { x: 100, y: 460, w: 100, h: 10 },
-        { x: 350, y: 480, w: 100, h: 10 },
-        { x: 600, y: 460, w: 100, h: 10 },
-        { x: 220, y: 350, w: 100, h: 10 },
-        { x: 480, y: 350, w: 100, h: 10 },
-        { x: 350, y: 240, w: 100, h: 10 },
-        { x: 80, y: 150, w: 100, h: 10 },
-        { x: 620, y: 150, w: 100, h: 10 }
+        { x: 100, y: 460, w: 100, h: 10 }, { x: 350, y: 480, w: 100, h: 10 }, { x: 600, y: 460, w: 100, h: 10 },
+        { x: 220, y: 350, w: 100, h: 10 }, { x: 480, y: 350, w: 100, h: 10 },
+        { x: 350, y: 240, w: 100, h: 10 }, { x: 80, y: 150, w: 100, h: 10 }, { x: 620, y: 150, w: 100, h: 10 }
     ];
 }
 
-function rectIntersect(r1, r2) {
-    return !(r2.x > r1.x + r1.w || r2.x + r2.w < r1.x || r2.y > r1.y + r1.h || r2.y + r2.h < r1.y);
-}
+function rectIntersect(r1, r2) { return !(r2.x > r1.x + r1.w || r2.x + r2.w < r1.x || r2.y > r1.y + r1.h || r2.y + r2.h < r1.y); }
 
 function updatePhysics(entity, dt) {
     entity.x += entity.vx * dt;
-    if (entity.dashTime === undefined || entity.dashTime <= 0) entity.vy += GRAVITY * dt;
+    if (entity.dashTime <= 0) entity.vy += GRAVITY * dt;
     entity.y += entity.vy * dt;
-    entity.grounded = false;
-    entity.onWall = 0; 
+    entity.grounded = false; entity.onWall = 0; 
 
     if (entity.x <= 0) { entity.x = 0; entity.onWall = -1; }
     if (entity.x + entity.w >= canvas.width) { entity.x = canvas.width - entity.w; entity.onWall = 1; }
 
     platforms.forEach(p => {
         if (rectIntersect(entity, p) && entity.vy > 0 && entity.y + entity.h - (entity.vy * dt) <= p.y + 10) {
-            entity.y = p.y - entity.h;
-            entity.vy = 0;
-            entity.grounded = true;
-            entity.jumps = 0; 
+            entity.y = p.y - entity.h; entity.vy = 0; entity.grounded = true; entity.jumps = 0; 
         }
     });
-
     if (entity.y < 0) { entity.y = 0; entity.vy = 0; }
+}
+
+function fireBullet(x, y, vx, vy, owner, isUlt) {
+    bullets.push({ 
+        x: x, y: y, w: isUlt ? 40 : 10, h: isUlt ? 20 : 3, 
+        vx: vx, vy: vy, owner: owner, damage: isUlt ? 3 : 1, isUltimate: isUlt 
+    });
 }
 
 function shoot(entity) {
     if (entity.cooldown <= 0) {
-        bullets.push({
-            x: entity.facing === 'right' ? entity.x + 12 : entity.x - 12,
-            y: entity.y + 3,
-            w: 10, h: 3, 
-            vx: entity.facing === 'right' ? BULLET_SPEED : -BULLET_SPEED,
-            owner: entity.color
-        });
-        // Apply AI specific cooldown multiplier
+        let spawnX = entity.facing === 'right' ? entity.x + 12 : entity.x - 12;
+        let baseVx = entity.facing === 'right' ? BULLET_SPEED : -BULLET_SPEED;
+
+        if (entity.weapon === 'shotgun' && entity.ammo > 0) {
+            fireBullet(spawnX, entity.y + 3, baseVx, 0, entity.color, false);
+            fireBullet(spawnX, entity.y + 3, baseVx, -50, entity.color, false);
+            fireBullet(spawnX, entity.y + 3, baseVx, 50, entity.color, false);
+            entity.ammo--;
+            if (entity.ammo <= 0) entity.weapon = 'default';
+        } else {
+            fireBullet(spawnX, entity.y + 3, baseVx, 0, entity.color, false);
+        }
+
         let aiMult = (entity === enemy) ? aiCooldownMult : 1;
-        entity.cooldown = 0.4 * aiMult; 
+        entity.cooldown = (entity.weapon === 'shotgun' ? 0.7 : 0.4) * aiMult; 
     }
+}
+
+function fireUltimate(entity) {
+    let spawnX = entity.facing === 'right' ? entity.x + 15 : entity.x - 45;
+    let baseVx = entity.facing === 'right' ? BULLET_SPEED * 1.5 : -BULLET_SPEED * 1.5;
+    fireBullet(spawnX, entity.y - 5, baseVx, 0, entity.color, true);
+    entity.blocks = 0; // Consume ultimate charge
 }
 
 function getShieldRect(entity) {
@@ -280,17 +232,15 @@ function getShieldRect(entity) {
 
 function updateAI(dt) {
     enemy.stateTimer -= dt;
-    enemy.vx = 0;
-    enemy.shielding = false;
+    enemy.vx = 0; enemy.shielding = false;
 
     if (enemy.onWall !== 0 && !enemy.grounded && enemy.vy > 0 && Math.random() < 0.05) {
-        enemy.vy = JUMP_VELOCITY * 0.9;
-        enemy.facing = enemy.onWall === -1 ? 'right' : 'left';
+        enemy.vy = JUMP_VELOCITY * 0.9; enemy.facing = enemy.onWall === -1 ? 'right' : 'left';
     }
 
     let incoming = bullets.find(b => b.owner === player.color && Math.abs(b.y - enemy.y) < 20 && Math.abs(b.x - enemy.x) < 150);
     
-    if (incoming) {
+    if (incoming && !incoming.isUltimate) { // AI tries to block normal bullets
         if (incoming.x < enemy.x) enemy.facing = 'left';
         if (Math.random() < 0.4 && enemy.grounded) enemy.vy = JUMP_VELOCITY;
         else enemy.shielding = true;
@@ -303,43 +253,48 @@ function updateAI(dt) {
             else if (enemy.grounded) { enemy.vy = JUMP_VELOCITY; enemy.jumps = 1; }
         }
         
-        // Apply difficulty multiplier to AI movement speed
         if (enemy.facing === 'left') enemy.vx = -MOVE_SPEED * aiSpeedMult;
         if (enemy.facing === 'right') enemy.vx = MOVE_SPEED * aiSpeedMult;
 
-        if ((enemy.facing === 'left' && player.x < enemy.x) || (enemy.facing === 'right' && player.x > enemy.x)) {
-            shoot(enemy);
+        let lineOfSight = ((enemy.facing === 'left' && player.x < enemy.x) || (enemy.facing === 'right' && player.x > enemy.x)) && Math.abs(player.y - enemy.y) < 20;
+
+        if (lineOfSight) {
+            if (enemy.blocks >= 10) fireUltimate(enemy);
+            else shoot(enemy);
         }
     }
 }
 
 function update(dt) {
-    if (gameState !== 'PLAYING') {
-        Object.assign(prevKeys, keys);
-        return; 
-    }
+    if (gameState !== 'PLAYING') { Object.assign(prevKeys, keys); return; }
 
     if (keys['r']) resetGame();
     if (player.hp <= 0 || enemy.hp <= 0) return;
+
+    // Weapon Spawner Logic
+    nextWeaponTimer -= dt;
+    if (nextWeaponTimer <= 0 && weaponDrops.length < 3) {
+        let p = platforms[Math.floor(Math.random() * (platforms.length - 1)) + 1]; // Pick random platform
+        weaponDrops.push({ x: p.x + p.w / 2, y: p.y - 12, w: 12, h: 12, type: 'shotgun' });
+        nextWeaponTimer = 8 + Math.random() * 4; // Spawn next in 8-12 secs
+    }
 
     let dashKey = keys['c'] || keys['l'];
     let shootKey = keys['z'] || keys['j'];
     let shieldKey = keys['x'] || keys['k'];
     let jumpKey = keys['w'] || keys['arrowup'];
+    let ultKey = keys['q'];
 
-    if (dashKey && player.dashCd <= 0) {
-        player.dashTime = DASH_DURATION;
-        player.dashCd = DASH_COOLDOWN;
-    }
+    if (ultKey && player.blocks >= 10) fireUltimate(player);
+
+    if (dashKey && player.dashCd <= 0) { player.dashTime = DASH_DURATION; player.dashCd = DASH_COOLDOWN; }
 
     player.vx = 0;
     player.shielding = shieldKey && !shootKey; 
 
     if (player.dashTime > 0) {
         player.vx = player.facing === 'left' ? -DASH_SPEED : DASH_SPEED;
-        player.vy = 0; 
-        player.dashTime -= dt;
-        player.shielding = false; 
+        player.vy = 0; player.dashTime -= dt; player.shielding = false; 
     } else {
         if (keys['a'] || keys['arrowleft']) { player.vx = -MOVE_SPEED; player.facing = 'left'; }
         if (keys['d'] || keys['arrowright']) { player.vx = MOVE_SPEED; player.facing = 'right'; }
@@ -347,7 +302,6 @@ function update(dt) {
         if (player.shielding && (keys['s'] || keys['arrowdown'])) player.facing = 'down';
 
         let prevJumpKey = prevKeys['w'] || prevKeys['arrowup'];
-
         if (!player.shielding && jumpKey && !prevJumpKey) {
             if (player.grounded) { player.vy = JUMP_VELOCITY; player.jumps = 1; } 
             else if (player.onWall !== 0) {
@@ -358,70 +312,99 @@ function update(dt) {
         }
     }
 
-    if (shootKey) shoot(player);
+    if (shootKey && !player.shielding) shoot(player);
 
-    player.cooldown -= dt;
-    player.dashCd -= dt;
-    enemy.cooldown -= dt;
+    player.cooldown -= dt; player.dashCd -= dt; enemy.cooldown -= dt;
 
     updatePhysics(player, dt);
     updateAI(dt);
     updatePhysics(enemy, dt);
 
+    // Weapon Pickup Logic
+    for (let i = weaponDrops.length - 1; i >= 0; i--) {
+        let wd = weaponDrops[i];
+        if (rectIntersect(player, wd)) { player.weapon = wd.type; player.ammo = 3; weaponDrops.splice(i, 1); continue; }
+        if (rectIntersect(enemy, wd)) { enemy.weapon = wd.type; enemy.ammo = 3; weaponDrops.splice(i, 1); continue; }
+    }
+
+    // Bullet & Collision Logic
     for (let i = bullets.length - 1; i >= 0; i--) {
         let b = bullets[i];
         b.x += b.vx * dt;
+        b.y += (b.vy || 0) * dt;
 
         let pShield = player.shielding ? getShieldRect(player) : null;
         let eShield = enemy.shielding ? getShieldRect(enemy) : null;
 
-        if (pShield && rectIntersect(b, pShield) && b.owner !== player.color) { bullets.splice(i, 1); continue; }
-        if (eShield && rectIntersect(b, eShield) && b.owner !== enemy.color) { bullets.splice(i, 1); continue; }
-        if (b.owner !== player.color && rectIntersect(b, player)) { player.hp--; bullets.splice(i, 1); continue; }
-        if (b.owner !== enemy.color && rectIntersect(b, enemy)) { enemy.hp--; bullets.splice(i, 1); continue; }
-        if (b.x < 0 || b.x > canvas.width) bullets.splice(i, 1);
+        // Hit Shields
+        if (pShield && rectIntersect(b, pShield) && b.owner !== player.color) { 
+            if (b.isUltimate) { player.hp -= b.damage; bullets.splice(i, 1); continue; } // Ults pierce shields and deal damage!
+            player.blocks = Math.min(10, player.blocks + 1); // Charge Player Ult
+            bullets.splice(i, 1); continue; 
+        }
+        if (eShield && rectIntersect(b, eShield) && b.owner !== enemy.color) { 
+            if (b.isUltimate) { enemy.hp -= b.damage; bullets.splice(i, 1); continue; }
+            enemy.blocks = Math.min(10, enemy.blocks + 1); // Charge Enemy Ult
+            bullets.splice(i, 1); continue; 
+        }
+
+        // Hit Bodies
+        if (b.owner !== player.color && rectIntersect(b, player)) { player.hp -= b.damage; bullets.splice(i, 1); continue; }
+        if (b.owner !== enemy.color && rectIntersect(b, enemy)) { enemy.hp -= b.damage; bullets.splice(i, 1); continue; }
+        if (b.x < -50 || b.x > canvas.width + 50 || b.y < -50 || b.y > canvas.height + 50) bullets.splice(i, 1);
     }
 
     Object.assign(prevKeys, keys);
 }
 
-// --- DRAWING ---
-function drawRect(rect, color) {
-    ctx.fillStyle = color;
-    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
-}
+function drawRect(rect, color) { ctx.fillStyle = color; ctx.fillRect(rect.x, rect.y, rect.w, rect.h); }
 
 function drawPlayer(entity) {
     drawRect(entity, entity.dashTime > 0 ? 'white' : entity.color);
     if (entity.shielding) drawRect(getShieldRect(entity), entity === player ? '#00ffff' : '#ff8888');
+    // Draw Weapon Indicator above head if equipped
+    if (entity.weapon !== 'default') {
+        ctx.fillStyle = '#00ff00';
+        for(let i=0; i<entity.ammo; i++) { ctx.fillRect(entity.x + (i*4) - 2, entity.y - 6, 3, 3); }
+    }
 }
 
 function drawHearts(x, y, hp, color) {
-    ctx.fillStyle = color;
-    ctx.font = '20px Arial';
+    ctx.fillStyle = color; ctx.font = '20px Arial';
     ctx.fillText('❤'.repeat(Math.max(0, hp)), x, y);
+}
+
+function drawUltimateBar(x, y, blocks, isReady) {
+    ctx.fillStyle = '#444'; ctx.fillRect(x, y, 100, 10);
+    if (isReady) {
+        ctx.fillStyle = '#ff00ff'; ctx.fillRect(x, y, 100, 10);
+        ctx.fillStyle = 'white'; ctx.font = '12px Arial'; ctx.fillText('ULT READY (Q)', x, y - 5);
+    } else {
+        ctx.fillStyle = '#00ffff'; ctx.fillRect(x, y, blocks * 10, 10);
+    }
 }
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
     if (gameState === 'MENU' || gameState === 'CUSTOMIZE' || gameState === 'SETTINGS') return;
 
     platforms.forEach(p => drawRect(p, 'rgba(68, 68, 68, 0.8)'));
+    weaponDrops.forEach(wd => drawRect(wd, '#00ff00')); // Draw Weapon Crates
 
     if (player.hp > 0) drawPlayer(player);
     if (enemy.hp > 0) drawPlayer(enemy);
 
-    bullets.forEach(b => drawRect(b, '#ffff00'));
+    bullets.forEach(b => drawRect(b, b.isUltimate ? '#ff00ff' : '#ffff00')); // Ults are magenta
 
     drawHearts(20, 30, player.hp, customBodyColor);
+    drawUltimateBar(20, 50, player.blocks, player.blocks >= 10);
+
     drawHearts(canvas.width - 120, 30, enemy.hp, 'red');
+    drawUltimateBar(canvas.width - 120, 50, enemy.blocks, enemy.blocks >= 10);
 
     if (player.dashCd > 0) {
-        ctx.fillStyle = '#888'; ctx.font = '12px Arial'; ctx.fillText('Dash CD', 20, 50);
-        ctx.fillRect(20, 55, 60 * (1 - (player.dashCd / DASH_COOLDOWN)), 4);
-    } else {
-        ctx.fillStyle = 'white'; ctx.font = '12px Arial'; ctx.fillText('Dash READY (C/L)', 20, 50);
+        ctx.fillStyle = '#888'; ctx.font = '12px Arial'; ctx.fillText('Dash CD', 20, 80);
+        ctx.fillRect(20, 85, 60 * (1 - (player.dashCd / DASH_COOLDOWN)), 4);
     }
 
     if (player.hp <= 0) { ctx.fillStyle = 'white'; ctx.font = '24px Arial'; ctx.fillText('RED WINS! Press R to Restart', 230, 300); }
