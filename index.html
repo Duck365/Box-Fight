@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blue vs Red: Arsenal Fixed</title>
+    <title>Blue vs Red: Arenas & Smart AI</title>
     <style>
         body { background-color: #0a0a1a; color: white; text-align: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; }
         
@@ -28,14 +28,18 @@
         .menu-btn {
             background-color: #222; color: white; border: 2px solid #00ffff;
             padding: 15px 40px; margin: 10px; font-size: 20px; cursor: pointer;
-            font-weight: bold; transition: 0.2s; text-transform: uppercase; width: 250px;
+            font-weight: bold; transition: 0.2s; text-transform: uppercase; width: 280px;
         }
         .menu-btn:hover { background-color: #00ffff; color: #000; }
 
-        .color-row { margin: 15px 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 15px; max-width: 300px; }
+        .color-row, .map-row { margin: 15px 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 15px; max-width: 400px; }
         .color-btn { width: 40px; height: 40px; border: 2px solid white; cursor: pointer; transition: transform 0.1s; }
         .color-btn:hover { transform: scale(1.1); }
         
+        .map-card { background: #222; border: 2px solid #555; padding: 10px; cursor: pointer; transition: 0.2s; width: 100%; text-align: center; }
+        .map-card:hover { border-color: #ff00ff; background: #333; }
+        .map-card.active { border-color: #00ffff; background: #1a3333; }
+
         .settings-panel { background: rgba(0,0,0,0.8); padding: 20px; border: 1px solid #555; text-align: left; width: 350px; }
         .settings-panel p { margin: 8px 0; font-size: 16px; color: #ccc; }
         
@@ -51,8 +55,19 @@
         <div id="mainMenu" class="screen" style="display: flex;">
             <h1>THE ARENA</h1>
             <button class="menu-btn" onclick="startGame()">Play</button>
+            <button class="menu-btn" onclick="showScreen('mapMenu')">Select Map</button>
             <button class="menu-btn" onclick="showScreen('customizeMenu')">Customize</button>
             <button class="menu-btn" onclick="showScreen('settingsMenu')">Options / Settings</button>
+        </div>
+
+        <div id="mapMenu" class="screen">
+            <h2>Select Arena</h2>
+            <div class="map-row">
+                <div id="mapBtn0" class="map-card active" onclick="selectMap(0)">Classic Arena</div>
+                <div id="mapBtn1" class="map-card" onclick="selectMap(1)">Close Quarters</div>
+                <div id="mapBtn2" class="map-card" onclick="selectMap(2)">The Stairway</div>
+            </div>
+            <button class="menu-btn" onclick="showScreen('mainMenu')" style="margin-top: 30px;">Back to Menu</button>
         </div>
 
         <div id="customizeMenu" class="screen">
@@ -109,21 +124,50 @@ let customBodyColor = 'blue';
 let difficultyLevel = 3; 
 let aiSpeedMult = 1.0;
 let aiCooldownMult = 1.0;
+let selectedMapIndex = 0;
 
-// Generate Starfield for background
+// Map Configurations
+const mapLayouts = [
+    [ // 0: Classic
+        { x: 0, y: 570, w: 800, h: 30 }, 
+        { x: 100, y: 460, w: 100, h: 10 }, { x: 350, y: 480, w: 100, h: 10 }, { x: 600, y: 460, w: 100, h: 10 },
+        { x: 220, y: 350, w: 100, h: 10 }, { x: 480, y: 350, w: 100, h: 10 },
+        { x: 350, y: 240, w: 100, h: 10 }, { x: 80, y: 150, w: 100, h: 10 }, { x: 620, y: 150, w: 100, h: 10 }
+    ],
+    [ // 1: Close Quarters
+        { x: 0, y: 570, w: 800, h: 30 },
+        { x: 250, y: 450, w: 300, h: 10 },
+        { x: 100, y: 320, w: 150, h: 10 }, { x: 550, y: 320, w: 150, h: 10 },
+        { x: 300, y: 180, w: 200, h: 10 }
+    ],
+    [ // 2: Stairway
+        { x: 0, y: 570, w: 800, h: 30 },
+        { x: 50, y: 480, w: 150, h: 10 },
+        { x: 250, y: 390, w: 150, h: 10 },
+        { x: 450, y: 300, w: 150, h: 10 },
+        { x: 650, y: 210, w: 150, h: 10 },
+        { x: 50, y: 150, w: 200, h: 10 }
+    ]
+];
+
 const stars = Array.from({length: 100}, () => ({
-    x: Math.random() * canvas.width, 
-    y: Math.random() * canvas.height, 
-    s: Math.random() * 2 + 1,
-    alpha: Math.random() * 0.5 + 0.2
+    x: Math.random() * canvas.width, y: Math.random() * canvas.height, 
+    s: Math.random() * 2 + 1, alpha: Math.random() * 0.5 + 0.2
 }));
 
 function showScreen(screenId) {
     document.getElementById('mainMenu').style.display = 'none';
+    document.getElementById('mapMenu').style.display = 'none';
     document.getElementById('customizeMenu').style.display = 'none';
     document.getElementById('settingsMenu').style.display = 'none';
     document.getElementById('pauseMenu').style.display = 'none';
     if (screenId) document.getElementById(screenId).style.display = 'flex';
+}
+
+function selectMap(index) {
+    selectedMapIndex = index;
+    document.querySelectorAll('.map-card').forEach(el => el.classList.remove('active'));
+    document.getElementById('mapBtn' + index).classList.add('active');
 }
 
 function startGame() { gameState = 'PLAYING'; showScreen(null); resetGame(); }
@@ -151,32 +195,18 @@ const DASH_SPEED = 600;
 const DASH_DURATION = 0.15;
 const DASH_COOLDOWN = 1.5;
 
-let keys = {};
-let prevKeys = {}; 
-window.addEventListener('keydown', e => {
-    keys[e.key.toLowerCase()] = true;
-    if (e.key.toLowerCase() === 'p' && !prevKeys['p']) togglePause();
-});
+let keys = {}; let prevKeys = {}; 
+window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; if (e.key.toLowerCase() === 'p' && !prevKeys['p']) togglePause(); });
 window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
 let player, enemy, bullets, platforms, lastTime;
-let weaponDrops = [];
-let nextWeaponTimer = 2; // Starts fast!
+let weaponDrops = []; let nextWeaponTimer = 2;
 
 function resetGame() {
-    // FIX: Added dashTime: 0 to enemy so it properly calculates gravity!
     player = { x: 50, y: 500, w: 10, h: 10, vx: 0, vy: 0, hp: 5, facing: 'right', shielding: false, cooldown: 0, dashTime: 0, dashCd: 0, color: customBodyColor, jumps: 0, onWall: 0, blocks: 0, weapon: 'default', ammo: 0 };
     enemy = { x: 740, y: 500, w: 10, h: 10, vx: 0, vy: 0, hp: 5, facing: 'left', shielding: false, cooldown: 0, dashTime: 0, dashCd: 0, color: 'red', stateTimer: 0, jumps: 0, onWall: 0, blocks: 0, weapon: 'default', ammo: 0 };
-    bullets = [];
-    weaponDrops = [];
-    nextWeaponTimer = 2; 
-    
-    platforms = [
-        { x: 0, y: 570, w: 800, h: 30 }, 
-        { x: 100, y: 460, w: 100, h: 10 }, { x: 350, y: 480, w: 100, h: 10 }, { x: 600, y: 460, w: 100, h: 10 },
-        { x: 220, y: 350, w: 100, h: 10 }, { x: 480, y: 350, w: 100, h: 10 },
-        { x: 350, y: 240, w: 100, h: 10 }, { x: 80, y: 150, w: 100, h: 10 }, { x: 620, y: 150, w: 100, h: 10 }
-    ];
+    bullets = []; weaponDrops = []; nextWeaponTimer = 2; 
+    platforms = JSON.parse(JSON.stringify(mapLayouts[selectedMapIndex])); // Deep copy the selected map
 }
 
 function rectIntersect(r1, r2) { return !(r2.x > r1.x + r1.w || r2.x + r2.w < r1.x || r2.y > r1.y + r1.h || r2.y + r2.h < r1.y); }
@@ -195,14 +225,17 @@ function updatePhysics(entity, dt) {
             entity.y = p.y - entity.h; entity.vy = 0; entity.grounded = true; entity.jumps = 0; 
         }
     });
+
     if (entity.y < 0) { entity.y = 0; entity.vy = 0; }
+    
+    // Safety Net: If entity falls off the screen somehow, teleport to top and take 1 damage
+    if (entity.y > canvas.height + 50) {
+        entity.hp -= 1; entity.y = 10; entity.vy = 0; entity.x = canvas.width / 2;
+    }
 }
 
 function fireBullet(x, y, vx, vy, owner, isUlt, w = 10, h = 3, color = '#ffff00') {
-    bullets.push({ 
-        x: x, y: y, w: isUlt ? 40 : w, h: isUlt ? 20 : h, 
-        vx: vx, vy: vy, owner: owner, damage: isUlt ? 3 : 1, isUltimate: isUlt, color: isUlt ? '#ff00ff' : color 
-    });
+    bullets.push({ x: x, y: y, w: isUlt ? 40 : w, h: isUlt ? 20 : h, vx: vx, vy: vy, owner: owner, damage: isUlt ? 3 : 1, isUltimate: isUlt, color: isUlt ? '#ff00ff' : color });
 }
 
 function shoot(entity) {
@@ -212,31 +245,21 @@ function shoot(entity) {
         let aiMult = (entity === enemy) ? aiCooldownMult : 1;
 
         if (entity.weapon === 'shotgun' && entity.ammo > 0) {
-            // Shotgun Spread (Green)
             fireBullet(spawnX, entity.y + 3, baseVx, 0, entity.color, false, 8, 3, '#00ff00');
             fireBullet(spawnX, entity.y + 3, baseVx, -50, entity.color, false, 8, 3, '#00ff00');
             fireBullet(spawnX, entity.y + 3, baseVx, 50, entity.color, false, 8, 3, '#00ff00');
-            entity.ammo--;
-            entity.cooldown = 0.7 * aiMult;
+            entity.ammo--; entity.cooldown = 0.7 * aiMult;
             if (entity.ammo <= 0) entity.weapon = 'default';
-            
         } else if (entity.weapon === 'minigun' && entity.ammo > 0) {
-            // Minigun Rapid Fire (Orange)
             let spreadVy = (Math.random() - 0.5) * 80; 
             fireBullet(spawnX, entity.y + 3, baseVx * 1.3, spreadVy, entity.color, false, 6, 6, '#ff8800');
-            entity.ammo--;
-            entity.cooldown = 0.08 * aiMult; 
+            entity.ammo--; entity.cooldown = 0.08 * aiMult; 
             if (entity.ammo <= 0) entity.weapon = 'default';
-            
         } else if (entity.weapon === 'sniper' && entity.ammo > 0) {
-            // Sniper Laser (Red, Extremely Fast)
             fireBullet(spawnX, entity.y + 4, baseVx * 5, 0, entity.color, false, 30, 2, '#ff0000'); 
-            entity.ammo--;
-            entity.cooldown = 1.0 * aiMult; 
+            entity.ammo--; entity.cooldown = 1.0 * aiMult; 
             if (entity.ammo <= 0) entity.weapon = 'default';
-            
         } else {
-            // Default Gun (Yellow)
             fireBullet(spawnX, entity.y + 3, baseVx, 0, entity.color, false, 10, 3, '#ffff00');
             entity.cooldown = 0.4 * aiMult;
         }
@@ -261,7 +284,14 @@ function updateAI(dt) {
     enemy.stateTimer -= dt;
     enemy.vx = 0; enemy.shielding = false;
 
-    if (enemy.onWall !== 0 && !enemy.grounded && enemy.vy > 0 && Math.random() < 0.05) {
+    // AI Platforming & Jump Logic Upgrade
+    if (player.y < enemy.y - 40) { // Player is on a higher platform
+        if (enemy.grounded && Math.random() < 0.1) {
+            enemy.vy = JUMP_VELOCITY; enemy.jumps = 1; // Single Jump up
+        } else if (!enemy.grounded && enemy.jumps === 1 && enemy.vy > -50 && Math.random() < 0.15) {
+            enemy.vy = JUMP_VELOCITY * 0.8; enemy.jumps = 2; // Execute Double Jump!
+        }
+    } else if (enemy.onWall !== 0 && !enemy.grounded && enemy.vy > 0 && Math.random() < 0.05) {
         enemy.vy = JUMP_VELOCITY * 0.9; enemy.facing = enemy.onWall === -1 ? 'right' : 'left';
     }
 
@@ -283,7 +313,7 @@ function updateAI(dt) {
         if (enemy.facing === 'left') enemy.vx = -MOVE_SPEED * aiSpeedMult;
         if (enemy.facing === 'right') enemy.vx = MOVE_SPEED * aiSpeedMult;
 
-        let lineOfSight = ((enemy.facing === 'left' && player.x < enemy.x) || (enemy.facing === 'right' && player.x > enemy.x)) && Math.abs(player.y - enemy.y) < 20;
+        let lineOfSight = ((enemy.facing === 'left' && player.x < enemy.x) || (enemy.facing === 'right' && player.x > enemy.x)) && Math.abs(player.y - enemy.y) < 30;
 
         if (lineOfSight) {
             if (enemy.blocks >= 10) fireUltimate(enemy);
@@ -298,7 +328,6 @@ function update(dt) {
     if (keys['r']) resetGame();
     if (player.hp <= 0 || enemy.hp <= 0) return;
 
-    // Faster Weapon Spawner Logic
     nextWeaponTimer -= dt;
     if (nextWeaponTimer <= 0 && weaponDrops.length < 3) {
         let p = platforms[Math.floor(Math.random() * (platforms.length - 1)) + 1];
@@ -307,20 +336,17 @@ function update(dt) {
         let color = type === 'shotgun' ? '#00ff00' : (type === 'minigun' ? '#ff8800' : '#ff0000');
         
         weaponDrops.push({ x: p.x + p.w / 2, y: p.y - 15, w: 16, h: 16, type: type, color: color });
-        nextWeaponTimer = 4 + Math.random() * 4; // Spawn next in 4-8 secs
+        nextWeaponTimer = 4 + Math.random() * 4; 
     }
 
-    let dashKey = keys['c'] || keys['l'];
-    let shootKey = keys['z'] || keys['j'];
-    let shieldKey = keys['x'] || keys['k'];
-    let jumpKey = keys['w'] || keys['arrowup'];
+    let dashKey = keys['c'] || keys['l']; let shootKey = keys['z'] || keys['j'];
+    let shieldKey = keys['x'] || keys['k']; let jumpKey = keys['w'] || keys['arrowup'];
     let ultKey = keys['q'];
 
     if (ultKey && player.blocks >= 10) fireUltimate(player);
     if (dashKey && player.dashCd <= 0) { player.dashTime = DASH_DURATION; player.dashCd = DASH_COOLDOWN; }
 
-    player.vx = 0;
-    player.shielding = shieldKey && !shootKey; 
+    player.vx = 0; player.shielding = shieldKey && !shootKey; 
 
     if (player.dashTime > 0) {
         player.vx = player.facing === 'left' ? -DASH_SPEED : DASH_SPEED;
@@ -334,10 +360,7 @@ function update(dt) {
         let prevJumpKey = prevKeys['w'] || prevKeys['arrowup'];
         if (!player.shielding && jumpKey && !prevJumpKey) {
             if (player.grounded) { player.vy = JUMP_VELOCITY; player.jumps = 1; } 
-            else if (player.onWall !== 0) {
-                player.vy = JUMP_VELOCITY * 0.9;
-                player.vx = player.onWall === -1 ? MOVE_SPEED * 1.5 : -MOVE_SPEED * 1.5;
-            } 
+            else if (player.onWall !== 0) { player.vy = JUMP_VELOCITY * 0.9; player.vx = player.onWall === -1 ? MOVE_SPEED * 1.5 : -MOVE_SPEED * 1.5; } 
             else if (player.jumps < 2) { player.vy = JUMP_VELOCITY * 0.8; player.jumps = 2; }
         }
     }
@@ -346,42 +369,29 @@ function update(dt) {
 
     player.cooldown -= dt; player.dashCd -= dt; enemy.cooldown -= dt;
 
-    updatePhysics(player, dt);
-    updateAI(dt);
-    updatePhysics(enemy, dt);
+    updatePhysics(player, dt); updateAI(dt); updatePhysics(enemy, dt);
 
-    // Weapon Pickup Logic
     for (let i = weaponDrops.length - 1; i >= 0; i--) {
         let wd = weaponDrops[i];
-        
-        let equipWeapon = (entity) => {
-            entity.weapon = wd.type;
-            if (wd.type === 'shotgun') entity.ammo = 3;
-            if (wd.type === 'minigun') entity.ammo = 50;
-            if (wd.type === 'sniper') entity.ammo = 1;
-        };
-
+        let equipWeapon = (entity) => { entity.weapon = wd.type; entity.ammo = (wd.type === 'shotgun') ? 3 : (wd.type === 'minigun' ? 50 : 1); };
         if (rectIntersect(player, wd)) { equipWeapon(player); weaponDrops.splice(i, 1); continue; }
         if (rectIntersect(enemy, wd)) { equipWeapon(enemy); weaponDrops.splice(i, 1); continue; }
     }
 
     for (let i = bullets.length - 1; i >= 0; i--) {
         let b = bullets[i];
-        b.x += b.vx * dt;
-        b.y += (b.vy || 0) * dt;
+        b.x += b.vx * dt; b.y += (b.vy || 0) * dt;
 
         let pShield = player.shielding ? getShieldRect(player) : null;
         let eShield = enemy.shielding ? getShieldRect(enemy) : null;
 
         if (pShield && rectIntersect(b, pShield) && b.owner !== player.color) { 
             if (b.isUltimate) { player.hp -= b.damage; bullets.splice(i, 1); continue; }
-            player.blocks = Math.min(10, player.blocks + 1); 
-            bullets.splice(i, 1); continue; 
+            player.blocks = Math.min(10, player.blocks + 1); bullets.splice(i, 1); continue; 
         }
         if (eShield && rectIntersect(b, eShield) && b.owner !== enemy.color) { 
             if (b.isUltimate) { enemy.hp -= b.damage; bullets.splice(i, 1); continue; }
-            enemy.blocks = Math.min(10, enemy.blocks + 1); 
-            bullets.splice(i, 1); continue; 
+            enemy.blocks = Math.min(10, enemy.blocks + 1); bullets.splice(i, 1); continue; 
         }
 
         if (b.owner !== player.color && rectIntersect(b, player)) { player.hp -= b.damage; bullets.splice(i, 1); continue; }
@@ -398,94 +408,57 @@ function drawPlayer(entity) {
     drawRect(entity, entity.dashTime > 0 ? 'white' : entity.color);
     if (entity.shielding) drawRect(getShieldRect(entity), entity === player ? '#00ffff' : '#ff8888');
     
-    // Draw Sniper Laser Sight
     if (entity.weapon === 'sniper') {
-        ctx.strokeStyle = 'rgba(255, 0, 0, 0.4)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        let eyeOffsetX = entity.facing === 'right' ? entity.x + 10 : entity.x;
-        ctx.moveTo(eyeOffsetX, entity.y + 5);
-        ctx.lineTo(entity.facing === 'right' ? canvas.width : 0, entity.y + 5);
-        ctx.stroke();
+        ctx.strokeStyle = 'rgba(255, 0, 0, 0.4)'; ctx.lineWidth = 1; ctx.beginPath();
+        ctx.moveTo(entity.facing === 'right' ? entity.x + 10 : entity.x, entity.y + 5);
+        ctx.lineTo(entity.facing === 'right' ? canvas.width : 0, entity.y + 5); ctx.stroke();
     }
 
-    // Draw Weapon Text Indicator above head
     if (entity.weapon !== 'default') {
         ctx.fillStyle = entity.weapon === 'shotgun' ? '#00ff00' : (entity.weapon === 'minigun' ? '#ff8800' : '#ff0000');
-        ctx.font = '10px Arial';
-        ctx.fillText(`${entity.weapon.toUpperCase()}: ${entity.ammo}`, entity.x - 15, entity.y - 8);
-    }
-}
-
-function drawHearts(x, y, hp, color) {
-    ctx.fillStyle = color; ctx.font = '20px Arial';
-    ctx.fillText('❤'.repeat(Math.max(0, hp)), x, y);
-}
-
-function drawUltimateBar(x, y, blocks, isReady) {
-    ctx.fillStyle = '#444'; ctx.fillRect(x, y, 100, 10);
-    if (isReady) {
-        ctx.fillStyle = '#ff00ff'; ctx.fillRect(x, y, 100, 10);
-        ctx.fillStyle = 'white'; ctx.font = '12px Arial'; ctx.fillText('ULT READY (Q)', x, y - 5);
-    } else {
-        ctx.fillStyle = '#00ffff'; ctx.fillRect(x, y, blocks * 10, 10);
+        ctx.font = '10px Arial'; ctx.fillText(`${entity.weapon.toUpperCase()}: ${entity.ammo}`, entity.x - 15, entity.y - 8);
     }
 }
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (gameState === 'MENU' || gameState === 'CUSTOMIZE' || gameState === 'SETTINGS') return;
+    if (gameState === 'MENU' || gameState === 'CUSTOMIZE' || gameState === 'SETTINGS' || gameState === 'MAP_MENU') return;
 
-    // Draw Space Background
-    stars.forEach(s => {
-        ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
-        ctx.fillRect(s.x, s.y, s.s, s.s);
-    });
+    stars.forEach(s => { ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`; ctx.fillRect(s.x, s.y, s.s, s.s); });
 
     platforms.forEach(p => drawRect(p, 'rgba(68, 68, 68, 0.8)'));
     
-    // Draw Weapon Crates with outlines
     weaponDrops.forEach(wd => {
-        drawRect(wd, wd.color);
-        ctx.strokeStyle = 'white';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(wd.x, wd.y, wd.w, wd.h);
+        drawRect(wd, wd.color); ctx.strokeStyle = 'white'; ctx.lineWidth = 1; ctx.strokeRect(wd.x, wd.y, wd.w, wd.h);
     }); 
 
     if (player.hp > 0) drawPlayer(player);
     if (enemy.hp > 0) drawPlayer(enemy);
 
-    // Draw Bullets with custom colors
     bullets.forEach(b => drawRect(b, b.color)); 
 
-    drawHearts(20, 30, player.hp, customBodyColor);
-    drawUltimateBar(20, 50, player.blocks, player.blocks >= 10);
+    ctx.fillStyle = customBodyColor; ctx.font = '20px Arial'; ctx.fillText('❤'.repeat(Math.max(0, player.hp)), 20, 30);
+    ctx.fillStyle = '#444'; ctx.fillRect(20, 50, 100, 10);
+    if (player.blocks >= 10) { ctx.fillStyle = '#ff00ff'; ctx.fillRect(20, 50, 100, 10); ctx.fillStyle = 'white'; ctx.font = '12px Arial'; ctx.fillText('ULT READY (Q)', 20, 45); } 
+    else { ctx.fillStyle = '#00ffff'; ctx.fillRect(20, 50, player.blocks * 10, 10); }
 
-    drawHearts(canvas.width - 120, 30, enemy.hp, 'red');
-    drawUltimateBar(canvas.width - 120, 50, enemy.blocks, enemy.blocks >= 10);
+    ctx.fillStyle = 'red'; ctx.font = '20px Arial'; ctx.fillText('❤'.repeat(Math.max(0, enemy.hp)), canvas.width - 120, 30);
+    ctx.fillStyle = '#444'; ctx.fillRect(canvas.width - 120, 50, 100, 10);
+    if (enemy.blocks >= 10) { ctx.fillStyle = '#ff00ff'; ctx.fillRect(canvas.width - 120, 50, 100, 10); ctx.fillStyle = 'white'; ctx.font = '12px Arial'; ctx.fillText('ULT READY', canvas.width - 120, 45); } 
+    else { ctx.fillStyle = '#00ffff'; ctx.fillRect(canvas.width - 120, 50, enemy.blocks * 10, 10); }
 
-    if (player.dashCd > 0) {
-        ctx.fillStyle = '#888'; ctx.font = '12px Arial'; ctx.fillText('Dash CD', 20, 80);
-        ctx.fillRect(20, 85, 60 * (1 - (player.dashCd / DASH_COOLDOWN)), 4);
-    }
+    if (player.dashCd > 0) { ctx.fillStyle = '#888'; ctx.font = '12px Arial'; ctx.fillText('Dash CD', 20, 80); ctx.fillRect(20, 85, 60 * (1 - (player.dashCd / DASH_COOLDOWN)), 4); }
 
     if (player.hp <= 0) { ctx.fillStyle = 'white'; ctx.font = '24px Arial'; ctx.fillText('RED WINS! Press R to Restart', 230, 300); }
     if (enemy.hp <= 0) { ctx.fillStyle = 'white'; ctx.font = '24px Arial'; ctx.fillText('BLUE WINS! Press R to Restart', 230, 300); }
 }
 
 function loop(timestamp) {
-    if (!lastTime) lastTime = timestamp;
-    let dt = (timestamp - lastTime) / 1000;
-    lastTime = timestamp;
-    if (dt > 0.1) dt = 0.1;
-
-    update(dt);
-    draw();
-    requestAnimationFrame(loop);
+    if (!lastTime) lastTime = timestamp; let dt = (timestamp - lastTime) / 1000; lastTime = timestamp; if (dt > 0.1) dt = 0.1;
+    update(dt); draw(); requestAnimationFrame(loop);
 }
 
-resetGame();
-requestAnimationFrame(loop);
+resetGame(); requestAnimationFrame(loop);
 </script>
 </body>
 </html>
