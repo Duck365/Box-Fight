@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blue vs Red: Ultimates & Arsenal</title>
+    <title>Blue vs Red: Arsenal Expanded</title>
     <style>
         body { background-color: #0a0a1a; color: white; text-align: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; }
         
@@ -200,19 +200,34 @@ function shoot(entity) {
     if (entity.cooldown <= 0) {
         let spawnX = entity.facing === 'right' ? entity.x + 12 : entity.x - 12;
         let baseVx = entity.facing === 'right' ? BULLET_SPEED : -BULLET_SPEED;
+        let aiMult = (entity === enemy) ? aiCooldownMult : 1;
 
         if (entity.weapon === 'shotgun' && entity.ammo > 0) {
             fireBullet(spawnX, entity.y + 3, baseVx, 0, entity.color, false);
             fireBullet(spawnX, entity.y + 3, baseVx, -50, entity.color, false);
             fireBullet(spawnX, entity.y + 3, baseVx, 50, entity.color, false);
             entity.ammo--;
+            entity.cooldown = 0.7 * aiMult;
             if (entity.ammo <= 0) entity.weapon = 'default';
+            
+        } else if (entity.weapon === 'minigun' && entity.ammo > 0) {
+            let spreadVy = (Math.random() - 0.5) * 60; // Bullet spread for machine gun feel
+            fireBullet(spawnX, entity.y + 3, baseVx * 1.2, spreadVy, entity.color, false);
+            entity.ammo--;
+            entity.cooldown = 0.08 * aiMult; // Insanely fast fire rate
+            if (entity.ammo <= 0) entity.weapon = 'default';
+            
+        } else if (entity.weapon === 'sniper' && entity.ammo > 0) {
+            fireBullet(spawnX, entity.y + 3, baseVx * 4, 0, entity.color, false); // Lightning fast bullet
+            entity.ammo--;
+            entity.cooldown = 1.0 * aiMult; // Long recovery after firing sniper
+            if (entity.ammo <= 0) entity.weapon = 'default';
+            
         } else {
+            // Default Gun
             fireBullet(spawnX, entity.y + 3, baseVx, 0, entity.color, false);
+            entity.cooldown = 0.4 * aiMult;
         }
-
-        let aiMult = (entity === enemy) ? aiCooldownMult : 1;
-        entity.cooldown = (entity.weapon === 'shotgun' ? 0.7 : 0.4) * aiMult; 
     }
 }
 
@@ -220,7 +235,7 @@ function fireUltimate(entity) {
     let spawnX = entity.facing === 'right' ? entity.x + 15 : entity.x - 45;
     let baseVx = entity.facing === 'right' ? BULLET_SPEED * 1.5 : -BULLET_SPEED * 1.5;
     fireBullet(spawnX, entity.y - 5, baseVx, 0, entity.color, true);
-    entity.blocks = 0; // Consume ultimate charge
+    entity.blocks = 0; 
 }
 
 function getShieldRect(entity) {
@@ -240,7 +255,7 @@ function updateAI(dt) {
 
     let incoming = bullets.find(b => b.owner === player.color && Math.abs(b.y - enemy.y) < 20 && Math.abs(b.x - enemy.x) < 150);
     
-    if (incoming && !incoming.isUltimate) { // AI tries to block normal bullets
+    if (incoming && !incoming.isUltimate) { 
         if (incoming.x < enemy.x) enemy.facing = 'left';
         if (Math.random() < 0.4 && enemy.grounded) enemy.vy = JUMP_VELOCITY;
         else enemy.shielding = true;
@@ -271,12 +286,16 @@ function update(dt) {
     if (keys['r']) resetGame();
     if (player.hp <= 0 || enemy.hp <= 0) return;
 
-    // Weapon Spawner Logic
+    // Weapon Spawner Logic - Now includes minigun and sniper
     nextWeaponTimer -= dt;
     if (nextWeaponTimer <= 0 && weaponDrops.length < 3) {
-        let p = platforms[Math.floor(Math.random() * (platforms.length - 1)) + 1]; // Pick random platform
-        weaponDrops.push({ x: p.x + p.w / 2, y: p.y - 12, w: 12, h: 12, type: 'shotgun' });
-        nextWeaponTimer = 8 + Math.random() * 4; // Spawn next in 8-12 secs
+        let p = platforms[Math.floor(Math.random() * (platforms.length - 1)) + 1];
+        let types = ['shotgun', 'minigun', 'sniper'];
+        let type = types[Math.floor(Math.random() * types.length)];
+        let color = type === 'shotgun' ? '#00ff00' : (type === 'minigun' ? '#ff8800' : '#ff0000');
+        
+        weaponDrops.push({ x: p.x + p.w / 2, y: p.y - 12, w: 12, h: 12, type: type, color: color });
+        nextWeaponTimer = 8 + Math.random() * 4; 
     }
 
     let dashKey = keys['c'] || keys['l'];
@@ -286,7 +305,6 @@ function update(dt) {
     let ultKey = keys['q'];
 
     if (ultKey && player.blocks >= 10) fireUltimate(player);
-
     if (dashKey && player.dashCd <= 0) { player.dashTime = DASH_DURATION; player.dashCd = DASH_COOLDOWN; }
 
     player.vx = 0;
@@ -323,11 +341,18 @@ function update(dt) {
     // Weapon Pickup Logic
     for (let i = weaponDrops.length - 1; i >= 0; i--) {
         let wd = weaponDrops[i];
-        if (rectIntersect(player, wd)) { player.weapon = wd.type; player.ammo = 3; weaponDrops.splice(i, 1); continue; }
-        if (rectIntersect(enemy, wd)) { enemy.weapon = wd.type; enemy.ammo = 3; weaponDrops.splice(i, 1); continue; }
+        
+        let equipWeapon = (entity) => {
+            entity.weapon = wd.type;
+            if (wd.type === 'shotgun') entity.ammo = 3;
+            if (wd.type === 'minigun') entity.ammo = 50;
+            if (wd.type === 'sniper') entity.ammo = 1;
+        };
+
+        if (rectIntersect(player, wd)) { equipWeapon(player); weaponDrops.splice(i, 1); continue; }
+        if (rectIntersect(enemy, wd)) { equipWeapon(enemy); weaponDrops.splice(i, 1); continue; }
     }
 
-    // Bullet & Collision Logic
     for (let i = bullets.length - 1; i >= 0; i--) {
         let b = bullets[i];
         b.x += b.vx * dt;
@@ -336,19 +361,17 @@ function update(dt) {
         let pShield = player.shielding ? getShieldRect(player) : null;
         let eShield = enemy.shielding ? getShieldRect(enemy) : null;
 
-        // Hit Shields
         if (pShield && rectIntersect(b, pShield) && b.owner !== player.color) { 
-            if (b.isUltimate) { player.hp -= b.damage; bullets.splice(i, 1); continue; } // Ults pierce shields and deal damage!
-            player.blocks = Math.min(10, player.blocks + 1); // Charge Player Ult
+            if (b.isUltimate) { player.hp -= b.damage; bullets.splice(i, 1); continue; }
+            player.blocks = Math.min(10, player.blocks + 1); 
             bullets.splice(i, 1); continue; 
         }
         if (eShield && rectIntersect(b, eShield) && b.owner !== enemy.color) { 
             if (b.isUltimate) { enemy.hp -= b.damage; bullets.splice(i, 1); continue; }
-            enemy.blocks = Math.min(10, enemy.blocks + 1); // Charge Enemy Ult
+            enemy.blocks = Math.min(10, enemy.blocks + 1); 
             bullets.splice(i, 1); continue; 
         }
 
-        // Hit Bodies
         if (b.owner !== player.color && rectIntersect(b, player)) { player.hp -= b.damage; bullets.splice(i, 1); continue; }
         if (b.owner !== enemy.color && rectIntersect(b, enemy)) { enemy.hp -= b.damage; bullets.splice(i, 1); continue; }
         if (b.x < -50 || b.x > canvas.width + 50 || b.y < -50 || b.y > canvas.height + 50) bullets.splice(i, 1);
@@ -362,10 +385,23 @@ function drawRect(rect, color) { ctx.fillStyle = color; ctx.fillRect(rect.x, rec
 function drawPlayer(entity) {
     drawRect(entity, entity.dashTime > 0 ? 'white' : entity.color);
     if (entity.shielding) drawRect(getShieldRect(entity), entity === player ? '#00ffff' : '#ff8888');
-    // Draw Weapon Indicator above head if equipped
+    
+    // Draw Sniper Laser Sight
+    if (entity.weapon === 'sniper') {
+        ctx.strokeStyle = 'rgba(255, 0, 0, 0.4)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        let eyeOffsetX = entity.facing === 'right' ? entity.x + 10 : entity.x;
+        ctx.moveTo(eyeOffsetX, entity.y + 5);
+        ctx.lineTo(entity.facing === 'right' ? canvas.width : 0, entity.y + 5);
+        ctx.stroke();
+    }
+
+    // Draw Weapon Text Indicator above head
     if (entity.weapon !== 'default') {
-        ctx.fillStyle = '#00ff00';
-        for(let i=0; i<entity.ammo; i++) { ctx.fillRect(entity.x + (i*4) - 2, entity.y - 6, 3, 3); }
+        ctx.fillStyle = entity.weapon === 'shotgun' ? '#00ff00' : (entity.weapon === 'minigun' ? '#ff8800' : '#ff0000');
+        ctx.font = '10px Arial';
+        ctx.fillText(`${entity.weapon.toUpperCase()}: ${entity.ammo}`, entity.x - 15, entity.y - 8);
     }
 }
 
@@ -389,12 +425,12 @@ function draw() {
     if (gameState === 'MENU' || gameState === 'CUSTOMIZE' || gameState === 'SETTINGS') return;
 
     platforms.forEach(p => drawRect(p, 'rgba(68, 68, 68, 0.8)'));
-    weaponDrops.forEach(wd => drawRect(wd, '#00ff00')); // Draw Weapon Crates
+    weaponDrops.forEach(wd => drawRect(wd, wd.color)); 
 
     if (player.hp > 0) drawPlayer(player);
     if (enemy.hp > 0) drawPlayer(enemy);
 
-    bullets.forEach(b => drawRect(b, b.isUltimate ? '#ff00ff' : '#ffff00')); // Ults are magenta
+    bullets.forEach(b => drawRect(b, b.isUltimate ? '#ff00ff' : '#ffff00')); 
 
     drawHearts(20, 30, player.hp, customBodyColor);
     drawUltimateBar(20, 50, player.blocks, player.blocks >= 10);
