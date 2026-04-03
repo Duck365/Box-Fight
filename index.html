@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blue vs Red: The Arena</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+        <div id="mainMenu" class="screen" style="display: flex;">
+            <h1>THE ARENA</h1>
+            <button class="menu-btn" onclick="startGame('AI')">Play: 1v1 CPU</button>
+            <button class="menu-btn" onclick="startGame('PVP')">Play: Local 2-Player</button>
+            <button class="menu-btn" onclick="showScreen('mapMenu')">Select Map</button>
+            <button class="menu-btn" onclick="showScreen('customizeMenu')">Customize</button>
+            <button class="menu-btn" onclick="showScreen('controlsMenu')">Controls & Remap</button>
+        </div>
+
+        <div id="mapMenu" class="screen">
+            <h2>Select Arena</h2>
+            <div class="row">
+                <div id="mapBtn0" class="map-card active" onclick="selectMap(0)">Classic Arena</div>
+                <div id="mapBtn1" class="map-card" onclick="selectMap(1)">Close Quarters</div>
+                <div id="mapBtn2" class="map-card" onclick="selectMap(2)">The Stairway</div>
+            </div>
+            <button class="menu-btn" onclick="showScreen('mainMenu')" style="margin-top: 30px;">Back to Menu</button>
+        </div>
+
+        <div id="customizeMenu" class="screen">
+            <h2>Customize Character</h2>
+            <div id="previewBox" style="background-color: blue;">
+                <div class="eye" style="right: 5px;"></div><div class="eye" style="right: 15px;"></div>
+            </div>
+            <span>Select Body Color:</span>
+            <div class="row">
+                <div class="color-btn" style="background: blue;" onclick="setBodyColor('blue')"></div>
+                <div class="color-btn" style="background: #00ff00;" onclick="setBodyColor('#00ff00')"></div>
+                <div class="color-btn" style="background: #ff00ff;" onclick="setBodyColor('#ff00ff')"></div>
+                <div class="color-btn" style="background: white;" onclick="setBodyColor('white')"></div>
+                <div class="color-btn" style="background: #ff8800;" onclick="setBodyColor('#ff8800')"></div>
+                <div class="color-btn" style="background: #ffff00;" onclick="setBodyColor('#ffff00')"></div>
+                <div class="color-btn" style="background: #00ffff;" onclick="setBodyColor('#00ffff')"></div>
+                <div class="color-btn" style="background: #8800ff;" onclick="setBodyColor('#8800ff')"></div>
+            </div>
+            <button class="menu-btn" onclick="showScreen('mainMenu')" style="margin-top: 30px;">Back to Menu</button>
+        </div>
+
+        <div id="controlsMenu" class="screen">
+            <h2>Controls & Remapping</h2>
+            <div class="settings-panel">
+                <div>
+                    <h3 style="color: #00ffff; margin-top: 0;">P1 (Click to Remap)</h3>
+                    <div class="remap-row"><span>Left:</span> <div class="remap-btn" id="btn_left" onclick="startRemap('left')">A</div></div>
+                    <div class="remap-row"><span>Right:</span> <div class="remap-btn" id="btn_right" onclick="startRemap('right')">D</div></div>
+                    <div class="remap-row"><span>Jump:</span> <div class="remap-btn" id="btn_up" onclick="startRemap('up')">W</div></div>
+                    <div class="remap-row"><span>Down:</span> <div class="remap-btn" id="btn_down" onclick="startRemap('down')">S</div></div>
+                    <div class="remap-row"><span>Shoot:</span> <div class="remap-btn" id="btn_shoot" onclick="startRemap('shoot')">Z</div></div>
+                    <div class="remap-row"><span>Shield:</span> <div class="remap-btn" id="btn_shield" onclick="startRemap('shield')">X</div></div>
+                    <div class="remap-row"><span>Dash:</span> <div class="remap-btn" id="btn_dash" onclick="startRemap('dash')">C</div></div>
+                    <div class="remap-row"><span>Ultimate:</span> <div class="remap-btn" id="btn_ult" onclick="startRemap('ult')">Q</div></div>
+                </div>
+                <div>
+                    <h3 style="color: #ff00ff; margin-top: 0;">Player 2 (Fixed)</h3>
+                    <p style="margin: 2px 0;"><strong>Move:</strong> Arrows</p>
+                    <p style="margin: 2px 0;"><strong>Jump:</strong> Up Arrow</p>
+                    <p style="margin: 2px 0;"><strong>Shoot:</strong> M</p>
+                    <p style="margin: 2px 0;"><strong>Shield:</strong> Comma (,)</p>
+                    <p style="margin: 2px 0;"><strong>Dash:</strong> Period (.)</p>
+                    <p style="margin: 2px 0;"><strong>Ultimate:</strong> Spacebar</p>
+                </div>
+            </div>
+            <button class="menu-btn" onclick="returnFromSettings()" style="margin-top:20px;">Back</button>
+        </div>
+
+        <div id="pauseMenu" class="screen">
+            <h2>GAME PAUSED</h2>
+            <button class="menu-btn" onclick="togglePause()">Resume</button>
+            <button class="menu-btn" onclick="showScreen('controlsMenu')">Controls</button>
+            <button class="menu-btn" onclick="quitToMenu()">Return to Main Menu</button>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
