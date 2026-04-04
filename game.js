@@ -508,3 +508,18 @@ keybindInputs.forEach(input => {
         // to remember this new keybind for Player 1 or Player 2!
     });
 });
+
+// Fullscreen Toggle Logic
+const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+fullscreenBtn.addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+        // If not in fullscreen, request it for the whole page
+        document.documentElement.requestFullscreen().catch(err => {
+            console.log(`Error attempting to enable fullscreen: ${err.message}`);
+        });
+    } else {
+        // If already in fullscreen, exit it
+        document.exitFullscreen();
+    }
+});
