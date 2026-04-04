@@ -8,10 +8,11 @@ let customBodyColor = 'blue';
 let selectedMapIndex = 0;
 let p1Wins = 0; let p2Wins = 0;
 
-let p1Controls = { left: 'a', right: 'd', up: 'w', down: 's', shoot: 'z', shield: 'x', dash: 'c', ult: 'q' };
+let p1Controls = { left: 'a', right: 'd', up: 'w', down: 's', shoot: 'z', shield: 'x', dash: 'c', ult: 'q', restart: 'r' };
 let p2Controls = { left: 'arrowleft', right: 'arrowright', up: 'arrowup', down: 'arrowdown', shoot: 'm', shield: ',', dash: '.', ult: 'space' };
 
 let keyEditMode = false;
+let awaitingKey = null; // Used for the new listener system
 const lightColors = ['white', '#ffff00', '#00ffff', '#00ff00'];
 
 const mapLayouts = [
@@ -43,12 +44,7 @@ function drawMiniMaps() {
     }
 }
 
-function goToMapSelect(mode) {
-    pendingGameMode = mode;
-    showScreen('mapMenu');
-    drawMiniMaps();
-}
-
+function goToMapSelect(mode) { pendingGameMode = mode; showScreen('mapMenu'); drawMiniMaps(); }
 function startRandomMap() { startGame(Math.floor(Math.random() * mapLayouts.length)); }
 function startGame(mapIndex) { gameMode = pendingGameMode; selectedMapIndex = mapIndex; gameState = 'PLAYING'; showScreen(null); resetGame(); }
 function togglePause() {
@@ -56,7 +52,10 @@ function togglePause() {
     else if (gameState === 'PAUSED') { gameState = 'PLAYING'; showScreen(null); }
 }
 function quitToMenu() { gameState = 'MENU'; showScreen('mainMenu'); p1Wins = 0; p2Wins = 0; }
-function returnFromSettings() { if (gameState === 'PAUSED') showScreen('pauseMenu'); else showScreen('mainMenu'); }
+function returnFromSettings() { 
+    awaitingKey = null; // Cancel any active listening
+    if (gameState === 'PAUSED') showScreen('pauseMenu'); else showScreen('mainMenu'); 
+}
 
 function setBodyColor(color) { 
     customBodyColor = color; 
@@ -68,37 +67,41 @@ function setBodyColor(color) {
     document.querySelectorAll('.eye, .big-eye').forEach(el => el.style.backgroundColor = eyeCol);
 }
 
-// NEW TEXTBOX LOGIC
+// NEW LISTENER KEYBIND LOGIC
 function toggleKeyEditMode() {
     keyEditMode = !keyEditMode;
     document.querySelectorAll('.edit-icon').forEach(el => el.style.display = keyEditMode ? 'inline-block' : 'none');
-    if (!keyEditMode) {
-        document.querySelectorAll('.key-input').forEach(el => el.style.display = 'none');
-        document.querySelectorAll('strong').forEach(el => el.style.display = 'inline');
-    }
+    if (!keyEditMode) awaitingKey = null; // Cancel listener if we exit edit mode
 }
 
-function showKeyInput(player, action) {
-    document.getElementById(`val_${player}_${action}`).style.display = 'none';
-    let inputEl = document.getElementById(`input_${player}_${action}`);
-    inputEl.style.display = 'inline-block';
-    inputEl.focus();
+function listenForKey(player, action) {
+    if (awaitingKey) {
+        // Reset the previous label if we click a new one before pressing a key
+        let oldLabel = document.getElementById(`val_${awaitingKey.player}_${awaitingKey.action}`);
+        oldLabel.classList.remove('waiting-key');
+        oldLabel.innerText = awaitingKey.player === 'p1' ? p1Controls[awaitingKey.action] : p2Controls[awaitingKey.action];
+    }
+    
+    awaitingKey = { player, action };
+    let label = document.getElementById(`val_${player}_${action}`);
+    label.innerText = "[Press Key]";
+    label.classList.add('waiting-key');
 }
 
-function updateKey(player, action, value) {
-    if (value.trim() !== '') {
-        let newKey = value.toLowerCase();
-        if (player === 'p1') p1Controls[action] = newKey;
-        else p2Controls[action] = newKey;
-        
-        let label = document.getElementById(`val_${player}_${action}`);
-        label.innerText = newKey;
-        label.style.display = 'inline';
-        
-        let inputEl = document.getElementById(`input_${player}_${action}`);
-        inputEl.style.display = 'none';
-        inputEl.value = ''; // clear for next time
+function resetKeysToDefault() {
+    p1Controls = { left: 'a', right: 'd', up: 'w', down: 's', shoot: 'z', shield: 'x', dash: 'c', ult: 'q', restart: 'r' };
+    p2Controls = { left: 'arrowleft', right: 'arrowright', up: 'arrowup', down: 'arrowdown', shoot: 'm', shield: ',', dash: '.', ult: 'space' };
+    
+    // Visually update everything in the UI
+    for(let key in p1Controls) {
+        let el = document.getElementById(`val_p1_${key}`);
+        if(el) { el.innerText = p1Controls[key]; el.classList.remove('waiting-key'); }
     }
+    for(let key in p2Controls) {
+        let el = document.getElementById(`val_p2_${key}`);
+        if(el) { el.innerText = p2Controls[key]; el.classList.remove('waiting-key'); }
+    }
+    awaitingKey = null;
 }
 
 let BASE_MOVE_SPEED = 180; let BASE_GRAVITY = 900; let BASE_JUMP = -350; 
@@ -106,16 +109,37 @@ const BULLET_SPEED = 500; const DASH_SPEED = 600; const DASH_DURATION = 0.15; co
 
 let keys = {}; let prevKeys = {}; 
 window.addEventListener('keydown', e => { 
-    // Ignore spacebar scrolling if we aren't in a text box
-    if(e.key === " " && document.activeElement.tagName !== "INPUT") e.preventDefault(); 
-    
-    // Convert special keys for our engine
+    // IF WE ARE WAITING FOR A KEYBIND
+    if (awaitingKey) {
+        e.preventDefault(); // Stop scrolling when mapping space/arrows
+        let newKey = e.key.toLowerCase(); 
+        if (newKey === ' ') newKey = 'space';
+        
+        // Save it to memory
+        if (awaitingKey.player === 'p1') p1Controls[awaitingKey.action] = newKey;
+        else p2Controls[awaitingKey.action] = newKey;
+        
+        // Update the screen
+        let label = document.getElementById(`val_${awaitingKey.player}_${awaitingKey.action}`);
+        label.innerText = newKey;
+        label.classList.remove('waiting-key');
+        
+        awaitingKey = null;
+        return; // Don't trigger any game logic
+    }
+
+    // NORMAL GAMEPLAY INPUT
     let mappedKey = e.key.toLowerCase(); 
     if (mappedKey === ' ') mappedKey = 'space';
-    keys[mappedKey] = true; 
     
+    // Prevent default scrolling for game controls
+    let isControlKey = Object.values(p1Controls).includes(mappedKey) || Object.values(p2Controls).includes(mappedKey);
+    if (isControlKey) e.preventDefault();
+
+    keys[mappedKey] = true; 
     if (mappedKey === 'p' && !prevKeys['p']) togglePause(); 
 });
+
 window.addEventListener('keyup', e => { 
     let k = e.key.toLowerCase(); if (k === ' ') k = 'space'; keys[k] = false; 
 });
@@ -149,22 +173,47 @@ function triggerRandomEvent() {
 
 function rectIntersect(r1, r2) { return !(r2.x > r1.x + r1.w || r2.x + r2.w < r1.x || r2.y > r1.y + r1.h || r2.y + r2.h < r1.y); }
 
+// NEW TRUE COLLISION PHYSICS
 function updatePhysics(entity, dt) {
+    // 1. Move Horizontally
     entity.x += entity.vx * dt;
-    if (entity.dashTime <= 0) entity.vy += BASE_GRAVITY * dt;
-    entity.y += entity.vy * dt;
-    entity.grounded = false; entity.onWall = 0; 
+    entity.onWall = 0;
 
     // Edge of canvas bounds
     if (entity.x <= 0) { entity.x = 0; entity.onWall = -1; }
     if (entity.x + entity.w >= canvas.width) { entity.x = canvas.width - entity.w; entity.onWall = 1; }
 
+    // X-Axis Collision Check
     platforms.forEach(p => {
-        if (rectIntersect(entity, p) && entity.vy > 0 && entity.y + entity.h - (entity.vy * dt) <= p.y + 10) {
-            entity.y = p.y - entity.h; entity.vy = 0; entity.grounded = true; entity.jumps = 0; entity.lastWall = 0;
+        if (rectIntersect(entity, p)) {
+            if (entity.vx > 0) { entity.x = p.x - entity.w; entity.onWall = 1; } 
+            else if (entity.vx < 0) { entity.x = p.x + p.w; entity.onWall = -1; }
+            entity.vx = 0;
         }
     });
 
+    // 2. Move Vertically
+    if (entity.dashTime <= 0) entity.vy += BASE_GRAVITY * dt;
+    entity.y += entity.vy * dt;
+    entity.grounded = false;
+
+    // Y-Axis Collision Check
+    platforms.forEach(p => {
+        if (rectIntersect(entity, p)) {
+            if (entity.vy > 0) { // Falling down
+                entity.y = p.y - entity.h; 
+                entity.vy = 0; 
+                entity.grounded = true; 
+                entity.jumps = 0; 
+                entity.lastWall = 0;
+            } else if (entity.vy < 0) { // Hitting head on ceiling
+                entity.y = p.y + p.h;
+                entity.vy = 0;
+            }
+        }
+    });
+
+    // Death barrier
     if (entity.y > canvas.height + 50) { entity.hp -= 1; entity.y = 10; entity.vy = 0; entity.x = canvas.width / 2; }
 }
 
@@ -283,8 +332,9 @@ function update(dt) {
     if (gameState !== 'PLAYING') { Object.assign(prevKeys, keys); return; }
 
     let alivePlayers = players.filter(p => p.hp > 0);
+    // NEW WIN STATE LOGIC
     if (alivePlayers.length <= 1) {
-        if (keys['r']) {
+        if (keys[p1Controls.restart]) {
             if (alivePlayers.length > 0) { if (alivePlayers[0].id === 1) p1Wins++; else p2Wins++; }
             resetGame();
         }
@@ -394,8 +444,9 @@ function draw() {
     let alivePlayers = players.filter(p => p.hp > 0);
     if (alivePlayers.length <= 1) { 
         ctx.fillStyle = 'white'; ctx.font = '30px Arial'; ctx.textAlign = 'center';
-        if (alivePlayers.length === 0) ctx.fillText('DRAW! Press R', canvas.width/2, 300);
-        else ctx.fillText(`${alivePlayers[0].id === 1 ? 'BLUE' : 'RED'} WINS! Press R to Continue`, canvas.width/2, 300);
+        let rKey = p1Controls.restart.toUpperCase();
+        if (alivePlayers.length === 0) ctx.fillText(`DRAW! Press ${rKey}`, canvas.width/2, 300);
+        else ctx.fillText(`Player ${alivePlayers[0].id} WINS! Press ${rKey} to Continue`, canvas.width/2, 300);
         ctx.textAlign = 'left';
     }
 }
