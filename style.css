@@ -60,9 +60,14 @@ h2 { color: #fff; margin-bottom: 20px; }
 .ctrl-row strong { margin-left: 8px; color: #ffeb3b; text-transform: uppercase; }
 .edit-icon { display: none; cursor: pointer; margin-left: 10px; font-size: 14px; }
 .edit-icon:hover { transform: scale(1.2); }
-/* New Text Box Styling for Keybinds */
-.key-input {
-    display: none; width: 30px; background: #222; color: yellow; 
-    border: 1px solid #fff; text-align: center; font-size: 16px; 
-    margin-left: 10px; text-transform: uppercase;
+
+.waiting-key {
+    color: yellow;
+    animation: flash 1s infinite;
+}
+
+@keyframes flash {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
 }
