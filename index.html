@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blue vs Red: UI Overhaul</title>
+    <title>Blue vs Red: The Arena</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -77,25 +77,25 @@
             <div class="settings-panel">
                 <div class="ctrl-col">
                     <h3 style="color: #00ffff;">Player 1</h3>
-                    <div class="ctrl-row">Left: <strong id="val_p1_left">a</strong> <span class="edit-icon" onclick="startRemap('p1', 'left')">✏️</span></div>
-                    <div class="ctrl-row">Right: <strong id="val_p1_right">d</strong> <span class="edit-icon" onclick="startRemap('p1', 'right')">✏️</span></div>
-                    <div class="ctrl-row">Jump: <strong id="val_p1_up">w</strong> <span class="edit-icon" onclick="startRemap('p1', 'up')">✏️</span></div>
-                    <div class="ctrl-row">Down: <strong id="val_p1_down">s</strong> <span class="edit-icon" onclick="startRemap('p1', 'down')">✏️</span></div>
-                    <div class="ctrl-row">Shoot: <strong id="val_p1_shoot">z</strong> <span class="edit-icon" onclick="startRemap('p1', 'shoot')">✏️</span></div>
-                    <div class="ctrl-row">Shield: <strong id="val_p1_shield">x</strong> <span class="edit-icon" onclick="startRemap('p1', 'shield')">✏️</span></div>
-                    <div class="ctrl-row">Dash: <strong id="val_p1_dash">c</strong> <span class="edit-icon" onclick="startRemap('p1', 'dash')">✏️</span></div>
-                    <div class="ctrl-row">Ultimate: <strong id="val_p1_ult">q</strong> <span class="edit-icon" onclick="startRemap('p1', 'ult')">✏️</span></div>
+                    <div class="ctrl-row">Left: <strong id="val_p1_left">a</strong> <input type="text" id="input_p1_left" class="key-input" maxlength="1" oninput="updateKey('p1', 'left', this.value)"> <span class="edit-icon" onclick="showKeyInput('p1', 'left')">✏️</span></div>
+                    <div class="ctrl-row">Right: <strong id="val_p1_right">d</strong> <input type="text" id="input_p1_right" class="key-input" maxlength="1" oninput="updateKey('p1', 'right', this.value)"> <span class="edit-icon" onclick="showKeyInput('p1', 'right')">✏️</span></div>
+                    <div class="ctrl-row">Jump: <strong id="val_p1_up">w</strong> <input type="text" id="input_p1_up" class="key-input" maxlength="1" oninput="updateKey('p1', 'up', this.value)"> <span class="edit-icon" onclick="showKeyInput('p1', 'up')">✏️</span></div>
+                    <div class="ctrl-row">Down: <strong id="val_p1_down">s</strong> <input type="text" id="input_p1_down" class="key-input" maxlength="1" oninput="updateKey('p1', 'down', this.value)"> <span class="edit-icon" onclick="showKeyInput('p1', 'down')">✏️</span></div>
+                    <div class="ctrl-row">Shoot: <strong id="val_p1_shoot">z</strong> <input type="text" id="input_p1_shoot" class="key-input" maxlength="1" oninput="updateKey('p1', 'shoot', this.value)"> <span class="edit-icon" onclick="showKeyInput('p1', 'shoot')">✏️</span></div>
+                    <div class="ctrl-row">Shield: <strong id="val_p1_shield">x</strong> <input type="text" id="input_p1_shield" class="key-input" maxlength="1" oninput="updateKey('p1', 'shield', this.value)"> <span class="edit-icon" onclick="showKeyInput('p1', 'shield')">✏️</span></div>
+                    <div class="ctrl-row">Dash: <strong id="val_p1_dash">c</strong> <input type="text" id="input_p1_dash" class="key-input" maxlength="1" oninput="updateKey('p1', 'dash', this.value)"> <span class="edit-icon" onclick="showKeyInput('p1', 'dash')">✏️</span></div>
+                    <div class="ctrl-row">Ultimate: <strong id="val_p1_ult">q</strong> <input type="text" id="input_p1_ult" class="key-input" maxlength="1" oninput="updateKey('p1', 'ult', this.value)"> <span class="edit-icon" onclick="showKeyInput('p1', 'ult')">✏️</span></div>
                 </div>
                 <div class="ctrl-col">
                     <h3 style="color: #ff00ff;">Player 2</h3>
-                    <div class="ctrl-row">Left: <strong id="val_p2_left">arrowleft</strong> <span class="edit-icon" onclick="startRemap('p2', 'left')">✏️</span></div>
-                    <div class="ctrl-row">Right: <strong id="val_p2_right">arrowright</strong> <span class="edit-icon" onclick="startRemap('p2', 'right')">✏️</span></div>
-                    <div class="ctrl-row">Jump: <strong id="val_p2_up">arrowup</strong> <span class="edit-icon" onclick="startRemap('p2', 'up')">✏️</span></div>
-                    <div class="ctrl-row">Down: <strong id="val_p2_down">arrowdown</strong> <span class="edit-icon" onclick="startRemap('p2', 'down')">✏️</span></div>
-                    <div class="ctrl-row">Shoot: <strong id="val_p2_shoot">m</strong> <span class="edit-icon" onclick="startRemap('p2', 'shoot')">✏️</span></div>
-                    <div class="ctrl-row">Shield: <strong id="val_p2_shield">,</strong> <span class="edit-icon" onclick="startRemap('p2', 'shield')">✏️</span></div>
-                    <div class="ctrl-row">Dash: <strong id="val_p2_dash">.</strong> <span class="edit-icon" onclick="startRemap('p2', 'dash')">✏️</span></div>
-                    <div class="ctrl-row">Ultimate: <strong id="val_p2_ult">space</strong> <span class="edit-icon" onclick="startRemap('p2', 'ult')">✏️</span></div>
+                    <div class="ctrl-row">Left: <strong id="val_p2_left">arrowleft</strong> <input type="text" id="input_p2_left" class="key-input" maxlength="10" oninput="updateKey('p2', 'left', this.value)"> <span class="edit-icon" onclick="showKeyInput('p2', 'left')">✏️</span></div>
+                    <div class="ctrl-row">Right: <strong id="val_p2_right">arrowright</strong> <input type="text" id="input_p2_right" class="key-input" maxlength="10" oninput="updateKey('p2', 'right', this.value)"> <span class="edit-icon" onclick="showKeyInput('p2', 'right')">✏️</span></div>
+                    <div class="ctrl-row">Jump: <strong id="val_p2_up">arrowup</strong> <input type="text" id="input_p2_up" class="key-input" maxlength="10" oninput="updateKey('p2', 'up', this.value)"> <span class="edit-icon" onclick="showKeyInput('p2', 'up')">✏️</span></div>
+                    <div class="ctrl-row">Down: <strong id="val_p2_down">arrowdown</strong> <input type="text" id="input_p2_down" class="key-input" maxlength="10" oninput="updateKey('p2', 'down', this.value)"> <span class="edit-icon" onclick="showKeyInput('p2', 'down')">✏️</span></div>
+                    <div class="ctrl-row">Shoot: <strong id="val_p2_shoot">m</strong> <input type="text" id="input_p2_shoot" class="key-input" maxlength="10" oninput="updateKey('p2', 'shoot', this.value)"> <span class="edit-icon" onclick="showKeyInput('p2', 'shoot')">✏️</span></div>
+                    <div class="ctrl-row">Shield: <strong id="val_p2_shield">,</strong> <input type="text" id="input_p2_shield" class="key-input" maxlength="10" oninput="updateKey('p2', 'shield', this.value)"> <span class="edit-icon" onclick="showKeyInput('p2', 'shield')">✏️</span></div>
+                    <div class="ctrl-row">Dash: <strong id="val_p2_dash">.</strong> <input type="text" id="input_p2_dash" class="key-input" maxlength="10" oninput="updateKey('p2', 'dash', this.value)"> <span class="edit-icon" onclick="showKeyInput('p2', 'dash')">✏️</span></div>
+                    <div class="ctrl-row">Ultimate: <strong id="val_p2_ult">space</strong> <input type="text" id="input_p2_ult" class="key-input" maxlength="10" oninput="updateKey('p2', 'ult', this.value)"> <span class="edit-icon" onclick="showKeyInput('p2', 'ult')">✏️</span></div>
                 </div>
             </div>
             <div>
