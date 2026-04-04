@@ -483,17 +483,32 @@ function loop(timestamp) {
 
 requestAnimationFrame(loop);
 
-// Fullscreen Toggle Logic
+// Fullscreen Toggle Logic (Cross-Browser Supported)
 const fullscreenBtn = document.getElementById('fullscreenBtn');
 
 fullscreenBtn.addEventListener('click', () => {
-    if (!document.fullscreenElement) {
-        // If not in fullscreen, request it for the whole page
-        document.documentElement.requestFullscreen().catch(err => {
-            console.log(`Error attempting to enable fullscreen: ${err.message}`);
-        });
+    let elem = document.documentElement;
+
+    // Check if we are currently in fullscreen mode across different browsers
+    let isFullscreen = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+
+    if (!isFullscreen) {
+        // Enter Fullscreen
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen().catch(err => console.log(err.message));
+        } else if (elem.webkitRequestFullscreen) { /* Safari */
+            elem.webkitRequestFullscreen();
+        } else if (elem.msRequestFullscreen) { /* IE11 */
+            elem.msRequestFullscreen();
+        }
     } else {
-        // If already in fullscreen, exit it
-        document.exitFullscreen();
+        // Exit Fullscreen
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) { /* Safari */
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) { /* IE11 */
+            document.msExitFullscreen();
+        }
     }
 });
