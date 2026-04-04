@@ -173,8 +173,10 @@ function triggerRandomEvent() {
 
 function rectIntersect(r1, r2) { return !(r2.x > r1.x + r1.w || r2.x + r2.w < r1.x || r2.y > r1.y + r1.h || r2.y + r2.h < r1.y); }
 
-// NEW TRUE COLLISION PHYSICS
 function updatePhysics(entity, dt) {
+    // Store previous Y position to prevent wall-teleporting
+    let prevY = entity.y;
+
     // 1. Move Horizontally
     entity.x += entity.vx * dt;
     entity.onWall = 0;
@@ -200,23 +202,29 @@ function updatePhysics(entity, dt) {
     // Y-Axis Collision Check
     platforms.forEach(p => {
         if (rectIntersect(entity, p)) {
-            if (entity.vy > 0) { // Falling down
+            // Check if bottom of character was actually ABOVE the platform before this frame
+            if (entity.vy > 0 && prevY + entity.h <= p.y + (entity.vy * dt) + 5) { 
                 entity.y = p.y - entity.h; 
                 entity.vy = 0; 
                 entity.grounded = true; 
                 entity.jumps = 0; 
                 entity.lastWall = 0;
-            } else if (entity.vy < 0) { // Hitting head on ceiling
+            } 
+            // Check if top of character hit the BOTTOM of a platform
+            else if (entity.vy < 0 && prevY >= p.y + p.h - (Math.abs(entity.vy) * dt) - 5) { 
                 entity.y = p.y + p.h;
                 entity.vy = 0;
             }
         }
     });
 
-    // Death barrier
-    if (entity.y > canvas.height + 50) { entity.hp -= 1; entity.y = 10; entity.vy = 0; entity.x = canvas.width / 2; }
+    // Pit Fall Respawn (Heart loss removed!)
+    if (entity.y > canvas.height + 50) { 
+        entity.y = 10; 
+        entity.vy = 0; 
+        entity.x = canvas.width / 2; 
+    }
 }
-
 function fireBullet(x, y, vx, vy, ownerId, isUlt, w = 10, h = 3, color = '#ffff00') {
     bullets.push({ x: x, y: y, w: isUlt ? 40 : w, h: isUlt ? 20 : h, vx: vx, vy: vy, ownerId: ownerId, damage: isUlt ? 3 : 1, isUltimate: isUlt, color: isUlt ? '#ff00ff' : color });
 }
