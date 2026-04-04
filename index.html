@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blue vs Red: The Arena</title>
+    <title>Blue vs Red: UI Overhaul</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,21 +13,44 @@
 
         <div id="mainMenu" class="screen" style="display: flex;">
             <h1>THE ARENA</h1>
-            <button class="menu-btn" onclick="startGame('AI')">Play: 1v1 CPU</button>
-            <button class="menu-btn" onclick="startGame('PVP')">Play: Local 2-Player</button>
-            <button class="menu-btn" onclick="showScreen('mapMenu')">Select Map</button>
-            <button class="menu-btn" onclick="showScreen('customizeMenu')">Customize</button>
-            <button class="menu-btn" onclick="showScreen('controlsMenu')">Controls & Remap</button>
+            <div class="menu-layout">
+                <div class="left-col">
+                    <div id="bigPreviewBox" style="background-color: blue;">
+                        <div class="big-eye" style="right: 15px;"></div><div class="big-eye" style="right: 45px;"></div>
+                    </div>
+                    <button class="menu-btn small-btn" onclick="showScreen('customizeMenu')">Customize</button>
+                    <button class="menu-btn small-btn" onclick="showScreen('controlsMenu')">Controls / Keybinds</button>
+                    <button class="menu-btn small-btn disabled" disabled>Shop (Coming Soon)</button>
+                </div>
+                
+                <div class="right-col">
+                    <button class="menu-btn" onclick="goToMapSelect('AI')">1V1: CPU</button>
+                    <button class="menu-btn" onclick="goToMapSelect('PVP')">1V1: 2 Player</button>
+                    <button class="menu-btn" onclick="showScreen('trainingMenu')">Training Room</button>
+                </div>
+            </div>
         </div>
 
         <div id="mapMenu" class="screen">
             <h2>Select Arena</h2>
-            <div class="row">
-                <div id="mapBtn0" class="map-card active" onclick="selectMap(0)">Classic Arena</div>
-                <div id="mapBtn1" class="map-card" onclick="selectMap(1)">Close Quarters</div>
-                <div id="mapBtn2" class="map-card" onclick="selectMap(2)">The Stairway</div>
+            <div class="map-grid">
+                <div class="map-preview-box" onclick="startGame(0)">
+                    <canvas id="mapPreview0" width="160" height="120"></canvas><p>Classic</p>
+                </div>
+                <div class="map-preview-box" onclick="startGame(1)">
+                    <canvas id="mapPreview1" width="160" height="120"></canvas><p>Close Quarters</p>
+                </div>
+                <div class="map-preview-box" onclick="startGame(2)">
+                    <canvas id="mapPreview2" width="160" height="120"></canvas><p>The Stairway</p>
+                </div>
+                <div class="map-preview-box" onclick="startGame(3)">
+                    <canvas id="mapPreview3" width="160" height="120"></canvas><p>The Pit</p>
+                </div>
+                <div class="map-preview-box rand-box" onclick="startRandomMap()">
+                    <div class="rand-icon">🎲</div><p>Randomize</p>
+                </div>
             </div>
-            <button class="menu-btn" onclick="showScreen('mainMenu')" style="margin-top: 30px;">Back to Menu</button>
+            <button class="menu-btn" onclick="showScreen('mainMenu')" style="margin-top: 20px;">Back to Menu</button>
         </div>
 
         <div id="customizeMenu" class="screen">
@@ -50,30 +73,35 @@
         </div>
 
         <div id="controlsMenu" class="screen">
-            <h2>Controls & Remapping</h2>
+            <h2>Controls & Keybinds</h2>
             <div class="settings-panel">
-                <div>
-                    <h3 style="color: #00ffff; margin-top: 0;">P1 (Click to Remap)</h3>
-                    <div class="remap-row"><span>Left:</span> <div class="remap-btn" id="btn_left" onclick="startRemap('left')">A</div></div>
-                    <div class="remap-row"><span>Right:</span> <div class="remap-btn" id="btn_right" onclick="startRemap('right')">D</div></div>
-                    <div class="remap-row"><span>Jump:</span> <div class="remap-btn" id="btn_up" onclick="startRemap('up')">W</div></div>
-                    <div class="remap-row"><span>Down:</span> <div class="remap-btn" id="btn_down" onclick="startRemap('down')">S</div></div>
-                    <div class="remap-row"><span>Shoot:</span> <div class="remap-btn" id="btn_shoot" onclick="startRemap('shoot')">Z</div></div>
-                    <div class="remap-row"><span>Shield:</span> <div class="remap-btn" id="btn_shield" onclick="startRemap('shield')">X</div></div>
-                    <div class="remap-row"><span>Dash:</span> <div class="remap-btn" id="btn_dash" onclick="startRemap('dash')">C</div></div>
-                    <div class="remap-row"><span>Ultimate:</span> <div class="remap-btn" id="btn_ult" onclick="startRemap('ult')">Q</div></div>
+                <div class="ctrl-col">
+                    <h3 style="color: #00ffff;">Player 1</h3>
+                    <div class="ctrl-row">Left: <strong id="val_p1_left">a</strong> <span class="edit-icon" onclick="startRemap('p1', 'left')">✏️</span></div>
+                    <div class="ctrl-row">Right: <strong id="val_p1_right">d</strong> <span class="edit-icon" onclick="startRemap('p1', 'right')">✏️</span></div>
+                    <div class="ctrl-row">Jump: <strong id="val_p1_up">w</strong> <span class="edit-icon" onclick="startRemap('p1', 'up')">✏️</span></div>
+                    <div class="ctrl-row">Down: <strong id="val_p1_down">s</strong> <span class="edit-icon" onclick="startRemap('p1', 'down')">✏️</span></div>
+                    <div class="ctrl-row">Shoot: <strong id="val_p1_shoot">z</strong> <span class="edit-icon" onclick="startRemap('p1', 'shoot')">✏️</span></div>
+                    <div class="ctrl-row">Shield: <strong id="val_p1_shield">x</strong> <span class="edit-icon" onclick="startRemap('p1', 'shield')">✏️</span></div>
+                    <div class="ctrl-row">Dash: <strong id="val_p1_dash">c</strong> <span class="edit-icon" onclick="startRemap('p1', 'dash')">✏️</span></div>
+                    <div class="ctrl-row">Ultimate: <strong id="val_p1_ult">q</strong> <span class="edit-icon" onclick="startRemap('p1', 'ult')">✏️</span></div>
                 </div>
-                <div>
-                    <h3 style="color: #ff00ff; margin-top: 0;">Player 2 (Fixed)</h3>
-                    <p style="margin: 2px 0;"><strong>Move:</strong> Arrows</p>
-                    <p style="margin: 2px 0;"><strong>Jump:</strong> Up Arrow</p>
-                    <p style="margin: 2px 0;"><strong>Shoot:</strong> M</p>
-                    <p style="margin: 2px 0;"><strong>Shield:</strong> Comma (,)</p>
-                    <p style="margin: 2px 0;"><strong>Dash:</strong> Period (.)</p>
-                    <p style="margin: 2px 0;"><strong>Ultimate:</strong> Spacebar</p>
+                <div class="ctrl-col">
+                    <h3 style="color: #ff00ff;">Player 2</h3>
+                    <div class="ctrl-row">Left: <strong id="val_p2_left">arrowleft</strong> <span class="edit-icon" onclick="startRemap('p2', 'left')">✏️</span></div>
+                    <div class="ctrl-row">Right: <strong id="val_p2_right">arrowright</strong> <span class="edit-icon" onclick="startRemap('p2', 'right')">✏️</span></div>
+                    <div class="ctrl-row">Jump: <strong id="val_p2_up">arrowup</strong> <span class="edit-icon" onclick="startRemap('p2', 'up')">✏️</span></div>
+                    <div class="ctrl-row">Down: <strong id="val_p2_down">arrowdown</strong> <span class="edit-icon" onclick="startRemap('p2', 'down')">✏️</span></div>
+                    <div class="ctrl-row">Shoot: <strong id="val_p2_shoot">m</strong> <span class="edit-icon" onclick="startRemap('p2', 'shoot')">✏️</span></div>
+                    <div class="ctrl-row">Shield: <strong id="val_p2_shield">,</strong> <span class="edit-icon" onclick="startRemap('p2', 'shield')">✏️</span></div>
+                    <div class="ctrl-row">Dash: <strong id="val_p2_dash">.</strong> <span class="edit-icon" onclick="startRemap('p2', 'dash')">✏️</span></div>
+                    <div class="ctrl-row">Ultimate: <strong id="val_p2_ult">space</strong> <span class="edit-icon" onclick="startRemap('p2', 'ult')">✏️</span></div>
                 </div>
             </div>
-            <button class="menu-btn" onclick="returnFromSettings()" style="margin-top:20px;">Back</button>
+            <div>
+                <button class="menu-btn small-btn" onclick="toggleKeyEditMode()" style="background:#444;">Customize Keys</button>
+                <button class="menu-btn small-btn" onclick="returnFromSettings()">Done</button>
+            </div>
         </div>
 
         <div id="pauseMenu" class="screen">
@@ -81,6 +109,12 @@
             <button class="menu-btn" onclick="togglePause()">Resume</button>
             <button class="menu-btn" onclick="showScreen('controlsMenu')">Controls</button>
             <button class="menu-btn" onclick="quitToMenu()">Return to Main Menu</button>
+        </div>
+
+        <div id="trainingMenu" class="screen">
+            <h2>TRAINING ROOM</h2>
+            <p>Under Construction!</p>
+            <button class="menu-btn" onclick="showScreen('mainMenu')">Back</button>
         </div>
     </div>
 
