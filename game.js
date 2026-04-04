@@ -104,7 +104,7 @@ function resetKeysToDefault() {
     awaitingKey = null;
 }
 
-let BASE_MOVE_SPEED = 180; let BASE_GRAVITY = 900; let BASE_JUMP = -350; 
+let BASE_MOVE_SPEED = 180; let BASE_GRAVITY = 900; let BASE_JUMP = -480; 
 const BULLET_SPEED = 500; const DASH_SPEED = 600; const DASH_DURATION = 0.15; const DASH_COOLDOWN = 1.5;
 
 let keys = {}; let prevKeys = {}; 
@@ -155,14 +155,14 @@ function resetGame() {
     ];
     bullets = []; weaponDrops = []; nextWeaponTimer = 2; 
     platforms = JSON.parse(JSON.stringify(mapLayouts[selectedMapIndex]));
-    currentEvent = 'None'; eventCountdown = 15; BASE_GRAVITY = 900; BASE_JUMP = -350;
+    currentEvent = 'None'; eventCountdown = 15; BASE_GRAVITY = 900; BASE_JUMP = -480;
 }
 
 function triggerRandomEvent() {
     const events = ['Low Gravity', 'Infinite Jump', 'BIG', 'Tiny', 'Minigun Only'];
     currentEvent = events[Math.floor(Math.random() * events.length)];
     eventCountdown = 20; eventMessageTimer = 3;
-    BASE_GRAVITY = 900; BASE_JUMP = -350;
+    BASE_GRAVITY = 900; BASE_JUMP = -480;
     players.forEach(p => { p.w = p.baseW; p.h = p.baseH; });
 
     if (currentEvent === 'Low Gravity') { BASE_GRAVITY = 400; BASE_JUMP = -250; }
@@ -174,8 +174,13 @@ function triggerRandomEvent() {
 function rectIntersect(r1, r2) { return !(r2.x > r1.x + r1.w || r2.x + r2.w < r1.x || r2.y > r1.y + r1.h || r2.y + r2.h < r1.y); }
 
 function updatePhysics(entity, dt) {
-    // Store previous Y position to prevent wall-teleporting
     let prevY = entity.y;
+
+    // Check if player is holding down (to fall through platforms)
+    let isDownPressed = false;
+    if (!entity.isAI) {
+        isDownPressed = (entity.id === 1) ? keys[p1Controls.down] : keys[p2Controls.down];
+    }
 
     // 1. Move Horizontally
     entity.x += entity.vx * dt;
@@ -185,12 +190,16 @@ function updatePhysics(entity, dt) {
     if (entity.x <= 0) { entity.x = 0; entity.onWall = -1; }
     if (entity.x + entity.w >= canvas.width) { entity.x = canvas.width - entity.w; entity.onWall = 1; }
 
-    // X-Axis Collision Check
+    // X-Axis Collision Check (Fixed floor snagging!)
     platforms.forEach(p => {
         if (rectIntersect(entity, p)) {
-            if (entity.vx > 0) { entity.x = p.x - entity.w; entity.onWall = 1; } 
-            else if (entity.vx < 0) { entity.x = p.x + p.w; entity.onWall = -1; }
-            entity.vx = 0;
+            // Only act as a wall if we are hitting the SIDE, not sitting on top of it.
+            // We leave a 5-pixel buffer so sliding on the floor doesn't trigger a wall bounce.
+            if (entity.y + entity.h > p.y + 5 && entity.y < p.y + p.h - 5) {
+                if (entity.vx > 0) { entity.x = p.x - entity.w; entity.onWall = 1; } 
+                else if (entity.vx < 0) { entity.x = p.x + p.w; entity.onWall = -1; }
+                entity.vx = 0;
+            }
         }
     });
 
@@ -202,6 +211,13 @@ function updatePhysics(entity, dt) {
     // Y-Axis Collision Check
     platforms.forEach(p => {
         if (rectIntersect(entity, p)) {
+            let isMainFloor = (p.y >= 550); // Identifies the solid ground at the bottom
+
+            // If holding DOWN and it's a floating platform, let them fall right through!
+            if (isDownPressed && !isMainFloor && entity.vy > 0) {
+                return; // Skip collision!
+            }
+
             // Check if bottom of character was actually ABOVE the platform before this frame
             if (entity.vy > 0 && prevY + entity.h <= p.y + (entity.vy * dt) + 5) { 
                 entity.y = p.y - entity.h; 
@@ -218,13 +234,14 @@ function updatePhysics(entity, dt) {
         }
     });
 
-    // Pit Fall Respawn (Heart loss removed!)
+    // Pit Fall Respawn
     if (entity.y > canvas.height + 50) { 
         entity.y = 10; 
         entity.vy = 0; 
         entity.x = canvas.width / 2; 
     }
 }
+
 function fireBullet(x, y, vx, vy, ownerId, isUlt, w = 10, h = 3, color = '#ffff00') {
     bullets.push({ x: x, y: y, w: isUlt ? 40 : w, h: isUlt ? 20 : h, vx: vx, vy: vy, ownerId: ownerId, damage: isUlt ? 3 : 1, isUltimate: isUlt, color: isUlt ? '#ff00ff' : color });
 }
@@ -353,7 +370,7 @@ function update(dt) {
     if (eventMessageTimer > 0) eventMessageTimer -= dt;
     if (eventCountdown <= 0) {
         if (currentEvent === 'None') triggerRandomEvent();
-        else { currentEvent = 'None'; eventCountdown = 15; eventMessageTimer = 3; BASE_GRAVITY = 900; BASE_JUMP = -350; players.forEach(p => { p.w = p.baseW; p.h = p.baseH; }); }
+        else { currentEvent = 'None'; eventCountdown = 15; eventMessageTimer = 3; BASE_GRAVITY = 900; BASE_JUMP = -480; players.forEach(p => { p.w = p.baseW; p.h = p.baseH; }); }
     }
 
     nextWeaponTimer -= dt;
