@@ -9,10 +9,8 @@ let selectedMapIndex = 0;
 let p1Wins = 0; let p2Wins = 0;
 
 let p1Controls = { left: 'a', right: 'd', up: 'w', down: 's', shoot: 'z', shield: 'x', dash: 'c', ult: 'q' };
-let p2Controls = { left: 'arrowleft', right: 'arrowright', up: 'arrowup', down: 'arrowdown', shoot: 'm', shield: ',', dash: '.', ult: ' ' };
+let p2Controls = { left: 'arrowleft', right: 'arrowright', up: 'arrowup', down: 'arrowdown', shoot: 'm', shield: ',', dash: '.', ult: 'space' };
 
-let waitingForPlayer = null; 
-let waitingForKey = null;
 let keyEditMode = false;
 const lightColors = ['white', '#ffff00', '#00ffff', '#00ff00'];
 
@@ -20,15 +18,17 @@ const mapLayouts = [
     [ { x: 0, y: 570, w: 800, h: 30 }, { x: 100, y: 460, w: 100, h: 10 }, { x: 350, y: 480, w: 100, h: 10 }, { x: 600, y: 460, w: 100, h: 10 }, { x: 220, y: 360, w: 100, h: 10 }, { x: 480, y: 360, w: 100, h: 10 }, { x: 350, y: 260, w: 100, h: 10 }, { x: 80, y: 200, w: 100, h: 10 }, { x: 620, y: 200, w: 100, h: 10 } ],
     [ { x: 0, y: 570, w: 800, h: 30 }, { x: 250, y: 450, w: 300, h: 10 }, { x: 100, y: 330, w: 150, h: 10 }, { x: 550, y: 330, w: 150, h: 10 }, { x: 300, y: 210, w: 200, h: 10 } ],
     [ { x: 0, y: 570, w: 800, h: 30 }, { x: 50, y: 480, w: 150, h: 10 }, { x: 250, y: 400, w: 150, h: 10 }, { x: 450, y: 320, w: 150, h: 10 }, { x: 650, y: 240, w: 150, h: 10 }, { x: 50, y: 200, w: 200, h: 10 } ],
-    [ { x: 0, y: 570, w: 250, h: 30 }, { x: 550, y: 570, w: 250, h: 30 }, { x: 0, y: 0, w: 20, h: 600 }, { x: 780, y: 0, w: 20, h: 600 }, { x: 350, y: 400, w: 100, h: 10 }, { x: 150, y: 250, w: 100, h: 10 }, { x: 550, y: 250, w: 100, h: 10 } ] // Map 4: The Pit
+    [ { x: 0, y: 570, w: 250, h: 30 }, { x: 550, y: 570, w: 250, h: 30 }, { x: 0, y: 0, w: 20, h: 600 }, { x: 780, y: 0, w: 20, h: 600 }, { x: 350, y: 400, w: 100, h: 10 }, { x: 150, y: 250, w: 100, h: 10 }, { x: 550, y: 250, w: 100, h: 10 } ] 
 ];
 
 const stars = Array.from({length: 100}, () => ({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, s: Math.random() * 2 + 1, alpha: Math.random() * 0.5 + 0.2 }));
 
 function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(el => el.style.display = 'none');
-    if (screenId) document.getElementById(screenId).style.display = 'flex';
-    waitingForKey = null; 
+    if (screenId) {
+        let targetScreen = document.getElementById(screenId);
+        if (targetScreen) targetScreen.style.display = 'flex';
+    }
 }
 
 function drawMiniMaps() {
@@ -60,21 +60,45 @@ function returnFromSettings() { if (gameState === 'PAUSED') showScreen('pauseMen
 
 function setBodyColor(color) { 
     customBodyColor = color; 
-    document.getElementById('previewBox').style.backgroundColor = color; 
-    document.getElementById('bigPreviewBox').style.backgroundColor = color; 
+    let preview1 = document.getElementById('previewBox');
+    let preview2 = document.getElementById('bigPreviewBox');
+    if (preview1) preview1.style.backgroundColor = color; 
+    if (preview2) preview2.style.backgroundColor = color; 
     let eyeCol = lightColors.includes(color) ? 'black' : 'white';
     document.querySelectorAll('.eye, .big-eye').forEach(el => el.style.backgroundColor = eyeCol);
 }
 
+// NEW TEXTBOX LOGIC
 function toggleKeyEditMode() {
     keyEditMode = !keyEditMode;
     document.querySelectorAll('.edit-icon').forEach(el => el.style.display = keyEditMode ? 'inline-block' : 'none');
+    if (!keyEditMode) {
+        document.querySelectorAll('.key-input').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('strong').forEach(el => el.style.display = 'inline');
+    }
 }
 
-function startRemap(player, action) {
-    waitingForPlayer = player;
-    waitingForKey = action;
-    document.getElementById('val_' + player + '_' + action).innerText = "[_]";
+function showKeyInput(player, action) {
+    document.getElementById(`val_${player}_${action}`).style.display = 'none';
+    let inputEl = document.getElementById(`input_${player}_${action}`);
+    inputEl.style.display = 'inline-block';
+    inputEl.focus();
+}
+
+function updateKey(player, action, value) {
+    if (value.trim() !== '') {
+        let newKey = value.toLowerCase();
+        if (player === 'p1') p1Controls[action] = newKey;
+        else p2Controls[action] = newKey;
+        
+        let label = document.getElementById(`val_${player}_${action}`);
+        label.innerText = newKey;
+        label.style.display = 'inline';
+        
+        let inputEl = document.getElementById(`input_${player}_${action}`);
+        inputEl.style.display = 'none';
+        inputEl.value = ''; // clear for next time
+    }
 }
 
 let BASE_MOVE_SPEED = 180; let BASE_GRAVITY = 900; let BASE_JUMP = -350; 
@@ -82,21 +106,19 @@ const BULLET_SPEED = 500; const DASH_SPEED = 600; const DASH_DURATION = 0.15; co
 
 let keys = {}; let prevKeys = {}; 
 window.addEventListener('keydown', e => { 
-    if(e.key === " ") e.preventDefault(); 
-    if (waitingForKey) {
-        let newKey = e.key.toLowerCase();
-        if (newKey === ' ') newKey = 'space'; // readability
-        if (waitingForPlayer === 'p1') p1Controls[waitingForKey] = newKey;
-        else p2Controls[waitingForKey] = newKey;
-        document.getElementById('val_' + waitingForPlayer + '_' + waitingForKey).innerText = newKey;
-        waitingForKey = null; waitingForPlayer = null;
-        return;
-    }
-    let mappedKey = e.key.toLowerCase(); if (mappedKey === ' ') mappedKey = 'space';
+    // Ignore spacebar scrolling if we aren't in a text box
+    if(e.key === " " && document.activeElement.tagName !== "INPUT") e.preventDefault(); 
+    
+    // Convert special keys for our engine
+    let mappedKey = e.key.toLowerCase(); 
+    if (mappedKey === ' ') mappedKey = 'space';
     keys[mappedKey] = true; 
+    
     if (mappedKey === 'p' && !prevKeys['p']) togglePause(); 
 });
-window.addEventListener('keyup', e => { let k = e.key.toLowerCase(); if (k === ' ') k = 'space'; keys[k] = false; });
+window.addEventListener('keyup', e => { 
+    let k = e.key.toLowerCase(); if (k === ' ') k = 'space'; keys[k] = false; 
+});
 
 let players = []; let bullets = []; let platforms = []; let weaponDrops = [];
 let nextWeaponTimer = 2; let lastTime;
@@ -133,18 +155,13 @@ function updatePhysics(entity, dt) {
     entity.y += entity.vy * dt;
     entity.grounded = false; entity.onWall = 0; 
 
+    // Edge of canvas bounds
     if (entity.x <= 0) { entity.x = 0; entity.onWall = -1; }
     if (entity.x + entity.w >= canvas.width) { entity.x = canvas.width - entity.w; entity.onWall = 1; }
 
     platforms.forEach(p => {
-        // Vertical collision
         if (rectIntersect(entity, p) && entity.vy > 0 && entity.y + entity.h - (entity.vy * dt) <= p.y + 10) {
             entity.y = p.y - entity.h; entity.vy = 0; entity.grounded = true; entity.jumps = 0; entity.lastWall = 0;
-        }
-        // Horizontal wall logic against platforms (Simple)
-        if (rectIntersect(entity, p) && !entity.grounded) {
-            if (entity.x < p.x && entity.vx > 0) { entity.x = p.x - entity.w; entity.onWall = 1; }
-            else if (entity.x > p.x && entity.vx < 0) { entity.x = p.x + p.w; entity.onWall = -1; }
         }
     });
 
@@ -249,13 +266,10 @@ function handlePlayerInput(p, controls, dt) {
             if (p.grounded) { 
                 p.vy = BASE_JUMP; p.jumps = 1; p.lastWall = 0;
             } else if (p.onWall !== 0) { 
-                // NEW STRICT WALL JUMP LOGIC
-                if (p.lastWall === p.onWall) {
-                    // Do nothing! Gravity will pull them down.
-                } else {
+                if (p.lastWall !== p.onWall) {
                     p.vy = BASE_JUMP * 0.9; 
                     p.vx = p.onWall === -1 ? BASE_MOVE_SPEED * 1.5 : -BASE_MOVE_SPEED * 1.5; 
-                    p.lastWall = p.onWall; // Log which wall they jumped off
+                    p.lastWall = p.onWall; 
                 }
             } else if (p.jumps < maxJumps) { 
                 p.vy = BASE_JUMP * 0.8; p.jumps++; 
