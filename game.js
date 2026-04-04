@@ -457,3 +457,29 @@ function loop(timestamp) {
 }
 
 requestAnimationFrame(loop);
+
+// Select all your keybind input boxes
+const keybindInputs = document.querySelectorAll('.keybind-input-class'); // Update this selector to match your inputs
+
+keybindInputs.forEach(input => {
+    input.addEventListener('keydown', function(event) {
+        // 1. Stop the browser's default behavior (stops scrolling, cursor moving, etc.)
+        event.preventDefault(); 
+        
+        // 2. Get the name of the key pressed
+        let keyName = event.key; 
+        
+        // 3. Make the names look nice for the menu (optional)
+        if (keyName === " ") keyName = "Space";
+        
+        // 4. Set the input box's value to the key pressed (capitalized)
+        this.value = keyName.toUpperCase(); 
+        
+        // 5. Instantly deselect the box so they don't accidentally overwrite it
+        this.blur(); 
+        
+        // --- ADD YOUR CODE HERE ---
+        // You will also need to update your game's actual variables here 
+        // to remember this new keybind for Player 1 or Player 2!
+    });
+});
