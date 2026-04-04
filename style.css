@@ -15,8 +15,13 @@ canvas { display: block; }
     justify-content: center; align-items: center; display: none; 
 }
 
-h1 { font-size: 48px; margin-bottom: 10px; color: #ff00ff; text-shadow: 2px 2px 0 #00ffff; }
+h1 { font-size: 48px; margin-bottom: 20px; color: #ff00ff; text-shadow: 2px 2px 0 #00ffff; }
 h2 { color: #fff; margin-bottom: 20px; }
+
+/* Menu Layout */
+.menu-layout { display: flex; justify-content: center; gap: 50px; width: 100%; max-width: 650px; }
+.left-col { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.right-col { display: flex; flex-direction: column; align-items: center; justify-content: center; }
 
 .menu-btn {
     background-color: #222; color: white; border: 2px solid #00ffff;
@@ -24,21 +29,34 @@ h2 { color: #fff; margin-bottom: 20px; }
     font-weight: bold; transition: 0.2s; text-transform: uppercase; width: 280px;
 }
 .menu-btn:hover { background-color: #00ffff; color: #000; }
+.small-btn { width: 220px; font-size: 14px; padding: 10px; }
+.disabled { border-color: #555; color: #777; cursor: not-allowed; }
+.disabled:hover { background-color: #222; color: #777; }
+
+/* Character Previews */
+#previewBox { width: 40px; height: 40px; border: 2px solid #fff; margin-bottom: 20px; position: relative;}
+.eye { position: absolute; width: 6px; height: 6px; background: white; top: 10px; }
+
+#bigPreviewBox { width: 120px; height: 120px; border: 4px solid #fff; margin-bottom: 20px; position: relative; }
+.big-eye { position: absolute; width: 18px; height: 18px; background: white; top: 30px; }
 
 .row { margin: 15px 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 15px; max-width: 450px; }
 .color-btn { width: 40px; height: 40px; border: 2px solid white; cursor: pointer; transition: transform 0.1s; }
 .color-btn:hover { transform: scale(1.1); }
 
-.map-card { background: #222; border: 2px solid #555; padding: 10px; cursor: pointer; transition: 0.2s; width: 100%; text-align: center; }
-.map-card:hover { border-color: #ff00ff; background: #333; }
-.map-card.active { border-color: #00ffff; background: #1a3333; }
+/* Map Grid */
+.map-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; max-width: 600px; }
+.map-preview-box { background: #222; border: 2px solid #555; padding: 5px; cursor: pointer; transition: 0.2s; text-align: center; width: 170px; }
+.map-preview-box:hover { border-color: #ff00ff; background: #333; }
+.map-preview-box canvas { background: black; margin-bottom: 5px; }
+.map-preview-box p { margin: 5px 0; font-weight: bold; font-size: 14px; }
+.rand-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 154px; }
+.rand-icon { font-size: 48px; }
 
-.settings-panel { background: rgba(0,0,0,0.8); padding: 20px; border: 1px solid #555; text-align: left; width: 500px; display: flex; justify-content: space-between;}
-.settings-panel div { width: 48%; }
-
-.remap-row { display: flex; justify-content: space-between; margin-bottom: 5px; align-items: center; }
-.remap-btn { background: #333; color: yellow; border: 1px solid #888; padding: 5px 10px; cursor: pointer; min-width: 60px; text-align: center;}
-.remap-btn:hover { background: #555; }
-
-#previewBox { width: 40px; height: 40px; border: 2px solid #fff; margin-bottom: 20px; position: relative;}
-.eye { position: absolute; width: 6px; height: 6px; background: white; top: 10px; }
+/* Controls Menu */
+.settings-panel { background: rgba(0,0,0,0.8); padding: 20px; border: 1px solid #555; text-align: left; width: 550px; display: flex; justify-content: space-between; margin-bottom: 15px;}
+.ctrl-col { width: 45%; }
+.ctrl-row { margin: 5px 0; font-size: 16px; display: flex; align-items: center; }
+.ctrl-row strong { margin-left: 8px; color: #ffeb3b; text-transform: uppercase; }
+.edit-icon { display: none; cursor: pointer; margin-left: 10px; font-size: 14px; }
+.edit-icon:hover { transform: scale(1.2); }
